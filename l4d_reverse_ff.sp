@@ -25,7 +25,7 @@ public Plugin myinfo =
 	author = "Mystic Spiral",
 	description = "Team attacker takes friendly-fire damage, victim takes no damage.",
 	version = "1.0",
-	url = "tbd"
+	url = "https://forums.alliedmods.net/showthread.php?p=2727641#post2727641"
 }
 
 public void OnClientPutInServer(int client)
