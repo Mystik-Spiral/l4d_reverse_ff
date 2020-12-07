@@ -35,21 +35,13 @@ public void OnClientPutInServer(int client)
 
 public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3])
 {
-	int IsWeaponGrenadeLauncher = 0;
-	if (inflictor > MaxClients)
-	{
-		char sInflictorClass[64];
-		GetEdictClassname(inflictor, sInflictorClass, sizeof(sInflictorClass));
-		if (StrEqual(sInflictorClass, "grenade_launcher_projectile"))
-		{
-			IsWeaponGrenadeLauncher = 1;
-		}
-	}
+	//int iGrenadeLauncher = IsWeaponGrenadeLauncher(inflictor);
+	//PrintToServer("Victim: %i, Attacker: %i, Inflictor: %i, Damage: %f, DamageType: %i, Weapon: %i, GrenadeLauncher: %b", victim, attacker, inflictor, damage, damagetype, weapon, iGrenadeLauncher);
 	if (IsValidClient(attacker) && IsClientInGame(attacker) && GetClientTeam(attacker) == 2)
 	{
 		if (IsValidClient(victim) && IsClientInGame(victim) && GetClientTeam(victim) == 2 && victim != attacker)
 		{
-			if (weapon > 0 || IsWeaponGrenadeLauncher == 1)
+			if (weapon > 0 || IsWeaponGrenadeLauncher(inflictor))
 			{
 				if (!IsClientAdmin(attacker))
 				{
@@ -57,9 +49,7 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 				}
 				return Plugin_Handled;
 			}
-			return Plugin_Continue;
 		}
-		return Plugin_Continue;
 	}
 	return Plugin_Continue;
 }
@@ -67,6 +57,20 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 stock bool IsValidClient(int client)
 {
 	return (client > 0 && client <= MaxClients);
+}
+
+stock bool IsWeaponGrenadeLauncher(int inflictor)
+{
+	if (inflictor > MaxClients)
+	{
+		char sInflictorClass[64];
+		GetEdictClassname(inflictor, sInflictorClass, sizeof(sInflictorClass));
+		if (StrEqual(sInflictorClass, "grenade_launcher_projectile"))
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 stock bool IsClientAdmin(int client)
