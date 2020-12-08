@@ -24,7 +24,7 @@ public Plugin myinfo =
 	name = "[L4D2] Reverse Friendly-Fire",
 	author = "Mystic Spiral",
 	description = "Team attacker takes friendly-fire damage, victim takes no damage.",
-	version = "1.0",
+	version = "1.1",
 	url = "https://forums.alliedmods.net/showthread.php?p=2727641#post2727641"
 }
 
@@ -35,23 +35,26 @@ public void OnClientPutInServer(int client)
 
 public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3])
 {
-	//int iGrenadeLauncher = IsWeaponGrenadeLauncher(inflictor);
-	//PrintToServer("Victim: %i, Attacker: %i, Inflictor: %i, Damage: %f, DamageType: %i, Weapon: %i, GrenadeLauncher: %b", victim, attacker, inflictor, damage, damagetype, weapon, iGrenadeLauncher);
-	if (IsValidClient(attacker) && IsClientInGame(attacker) && GetClientTeam(attacker) == 2)
+	//PrintToServer("Vic: %i, Atk: %i, Inf: %i, Dam: %f, DamTyp: %i, Wpn: %i", victim, attacker, inflictor, damage, damagetype, weapon);
+	if (IsValidClient(attacker) && IsClientInGame(attacker) && GetClientTeam(attacker) == 2) 							//attacker is valid, in game, and survivor
 	{
-		if (IsValidClient(victim) && IsClientInGame(victim) && GetClientTeam(victim) == 2 && victim != attacker)
+		if (IsValidClient(victim) && IsClientInGame(victim) && GetClientTeam(victim) == 2 && victim != attacker)				//victim is valid, in game, and survivor
 		{
-			if (weapon > 0 || IsWeaponGrenadeLauncher(inflictor))
+			if (weapon > 0 || IsWeaponGrenadeLauncher(inflictor)) 										//if weapon caused damage proceed to reverse damage
 			{
-				if (!IsClientAdmin(attacker))
+				if (!IsClientAdmin(attacker))												//admins immune to reverse damage, but still do no damage to victim
 				{
-					SDKHooks_TakeDamage(attacker, inflictor, attacker, damage, damagetype, weapon, damageForce, damagePosition);
+					if (IsSpecialAmmo(weapon, attacker, inflictor))									//if weapon has explosive or incendiary ammo
+					{
+						damage = damage * 1.125;										//increase damage by 12.5%
+					}
+					SDKHooks_TakeDamage(attacker, inflictor, victim, damage, damagetype, weapon, damageForce, damagePosition);	//inflict damage to attacker
 				}
-				return Plugin_Handled;
+				return Plugin_Handled; 													//no damage for victim
 			}
 		}
 	}
-	return Plugin_Continue;
+	return Plugin_Continue; //all other damage behaves normal
 }
 
 stock bool IsValidClient(int client)
@@ -70,6 +73,28 @@ stock bool IsWeaponGrenadeLauncher(int inflictor)
 			return true;
 		}
 	}
+	return false;
+}
+
+stock bool IsSpecialAmmo(int weapon, int attacker, int inflictor)
+{
+	if(weapon > 0 && attacker == inflictor) 										//prevent error with melee weapons which have different inflictor
+	{
+		int iAmmoBits = GetEntProp(weapon, Prop_Send, "m_upgradeBitVec");
+		if (iAmmoBits == 1 || iAmmoBits == 5 || iAmmoBits == 2 || iAmmoBits == 6)					//0=none, 1=incendiary, 2=explosive, (4=laser), 5=incendiary+laser, 6=explosive+laser
+		{
+			return true;
+		}
+	}
+	//have not figured out yet how to determine if grenade launcher ammo is incendiary/explosive
+	//if(IsWeaponGrenadeLauncher(inflictor))
+	//{
+	//	int iAmmoBits = GetEntProp("grenade_launcher_projectile", Prop_Send, "m_upgradeBitVec");
+	//	if (iAmmoBits == 1 || iAmmoBits == 5 || iAmmoBits == 2 || iAmmoBits == 6)
+	//	{
+	//		return true;
+	//	}
+	//}
 	return false;
 }
 
