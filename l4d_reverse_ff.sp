@@ -22,13 +22,13 @@ Players with the generic admin flag will not have friendly-fire reversed or do d
 #define PLUGIN_VERSION "1.2"
 #define CVAR_FLAGS FCVAR_NOTIFY
 
-ConVar cvar_ReverseFFenabled;
-ConVar cvar_AdminImmune;
-ConVar cvar_SpclAmmoDamage;
+ConVar cvar_reverseff_enabled;
+ConVar cvar_reverseff_immunity;
+ConVar cvar_reverseff_multiplier;
 
-bool g_bCvarReverseFFenabled;
-bool g_bCvarAdminImmune;
-float g_fCvarSpclAmmoDamage;
+bool g_bCvarPluginEnabled;
+bool g_bCvarAdminImmunity;
+float g_fCvarDamageMultiplier;
 
 public Plugin myinfo =
 {
@@ -52,17 +52,17 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
-	CreateConVar("reverse_ff_version", PLUGIN_VERSION, "Reverse Friendly-Fire", CVAR_FLAGS|FCVAR_DONTRECORD);
-	cvar_ReverseFFenabled = CreateConVar("reverse_ff_enabled", "1", "Enable this plugin", CVAR_FLAGS, true, 0.0, true, 1.0);
-	cvar_AdminImmune = CreateConVar("reverse_ff_admin_immune", "1", "Admin immune to reversing FF", CVAR_FLAGS, true, 0.0, true, 1.0);
-	cvar_SpclAmmoDamage = CreateConVar("reverse_ff_spcl_ammo_damage_mult", "1.125", "Special ammo damage multiplier", CVAR_FLAGS, true, 1.0, true, 2.0);
+	CreateConVar("reverseff_version", PLUGIN_VERSION, "Reverse Friendly-Fire", CVAR_FLAGS|FCVAR_DONTRECORD);
+	cvar_reverseff_enabled = CreateConVar("reverseff_enabled", "1", "Enable this plugin", CVAR_FLAGS, true, 0.0, true, 1.0);
+	cvar_reverseff_immunity = CreateConVar("reverseff_immunity", "1", "Admin immune to reversing FF", CVAR_FLAGS, true, 0.0, true, 1.0);
+	cvar_reverseff_multiplier = CreateConVar("reverseff_multiplier", "1.125", "Special ammo damage multiplier", CVAR_FLAGS, true, 1.0, true, 2.0);
 	AutoExecConfig(true, "l4d_reverse_ff");
 	
 	GetCvars();
 	
-	cvar_ReverseFFenabled.AddChangeHook(action_ConVarChanged);
-	cvar_AdminImmune.AddChangeHook(action_ConVarChanged);
-	cvar_SpclAmmoDamage.AddChangeHook(action_ConVarChanged);
+	cvar_reverseff_enabled.AddChangeHook(action_ConVarChanged);
+	cvar_reverseff_immunity.AddChangeHook(action_ConVarChanged);
+	cvar_reverseff_multiplier.AddChangeHook(action_ConVarChanged);
 }
 
 public int action_ConVarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
@@ -72,9 +72,9 @@ public int action_ConVarChanged(ConVar convar, const char[] oldValue, const char
 
 void GetCvars()
 {
-	g_bCvarReverseFFenabled = cvar_ReverseFFenabled.BoolValue;
-	g_bCvarAdminImmune = cvar_AdminImmune.BoolValue;
-	g_fCvarSpclAmmoDamage = cvar_SpclAmmoDamage.FloatValue;
+	g_bCvarPluginEnabled = cvar_reverseff_enabled.BoolValue;
+	g_bCvarAdminImmunity = cvar_reverseff_immunity.BoolValue;
+	g_fCvarDamageMultiplier = cvar_reverseff_multiplier.FloatValue;
 }
 
 public void OnClientPutInServer(int client)
@@ -84,6 +84,10 @@ public void OnClientPutInServer(int client)
 
 public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3])
 {
+	if (!g_bCvarPluginEnabled)
+	{
+		return Plugin_Continue;
+	}
 	//PrintToServer("Vic: %i, Atk: %i, Inf: %i, Dam: %f, DamTyp: %i, Wpn: %i", victim, attacker, inflictor, damage, damagetype, weapon);
 	if (IsValidClient(attacker) && IsClientInGame(attacker) && GetClientTeam(attacker) == 2) 							//attacker is valid, in game, and survivor
 	{
@@ -91,11 +95,11 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 		{
 			if (weapon > 0 || IsWeaponGrenadeLauncher(inflictor)) 										//if weapon caused damage proceed to reverse damage
 			{
-				if (!(IsClientAdmin(attacker) && g_bCvarAdminImmune == true))								//check admin immunity
+				if (!(IsClientAdmin(attacker) && g_bCvarAdminImmunity == true))								//check admin immunity
 				{
 					if (IsSpecialAmmo(weapon, attacker, inflictor))									//if weapon has explosive or incendiary ammo
 					{
-						damage = damage * 1.125;										//increase damage by 12.5%
+						damage = damage * g_fCvarDamageMultiplier;								//increase damage by cvar "reverseff_multiplier"
 					}
 					SDKHooks_TakeDamage(attacker, inflictor, victim, damage, damagetype, weapon, damageForce, damagePosition);	//inflict damage to attacker
 				}
