@@ -1,0 +1,14 @@
+05-Dec-2020 v1.0 Initial release
+
+08-Dec-2020 v1.1 If attacker weapon has incendiary/explosive ammo, increase damage to attacker by 12.5%.
+
+09-Dec-2020 v1.2 Added dynamically changeable ConVars:
+
+  reverseff_enabled: 	set to 1 to enable plugin, 0 to disable
+  reverseff_immunity: 	set to 1 to make admins immune to reverse FF damage, set to 0 to reverse FF damage for everyone
+  reverseff_multiplier: if attacker is using explosive or incendiary ammo, increase damage by this multiplier
+			default is 1.125 (12.5% extra damage), 1.0=no extra damage, 2.0=double damage
+
+Also added a standard ConVar:
+
+  reverseff_version: 	shows the plugin version
