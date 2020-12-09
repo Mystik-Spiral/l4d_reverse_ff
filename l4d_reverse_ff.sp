@@ -19,13 +19,62 @@ Players with the generic admin flag will not have friendly-fire reversed or do d
 #pragma semicolon 1
 #pragma newdecls required
 
+#define PLUGIN_VERSION "1.2"
+#define CVAR_FLAGS FCVAR_NOTIFY
+
+ConVar cvar_ReverseFFenabled;
+ConVar cvar_AdminImmune;
+ConVar cvar_SpclAmmoDamage;
+
+bool g_bCvarReverseFFenabled;
+bool g_bCvarAdminImmune;
+float g_fCvarSpclAmmoDamage;
+
 public Plugin myinfo =
 {
 	name = "[L4D2] Reverse Friendly-Fire",
 	author = "Mystic Spiral",
 	description = "Team attacker takes friendly-fire damage, victim takes no damage.",
-	version = "1.1",
+	version = PLUGIN_VERSION,
 	url = "https://forums.alliedmods.net/showthread.php?p=2727641#post2727641"
+}
+
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
+{
+	EngineVersion test = GetEngineVersion();
+	if ( test != Engine_Left4Dead2 )
+	{
+		strcopy(error, err_max, "Plugin only supports Left 4 Dead 2.");
+		return APLRes_SilentFailure;
+	}
+	return APLRes_Success;
+}
+
+public void OnPluginStart()
+{
+	CreateConVar("reverse_ff_version", PLUGIN_VERSION, "Reverse Friendly-Fire", CVAR_FLAGS|FCVAR_DONTRECORD);
+	cvar_ReverseFFenabled = CreateConVar("reverse_ff_enabled", "1", "Enable this plugin", CVAR_FLAGS, true, 0.0, true, 1.0);
+	cvar_AdminImmune = CreateConVar("reverse_ff_admin_immune", "1", "Admin immune to reversing FF", CVAR_FLAGS, true, 0.0, true, 1.0);
+	cvar_SpclAmmoDamage = CreateConVar("reverse_ff_spcl_ammo_damage_mult", "1.125", "Special ammo damage multiplier", CVAR_FLAGS, true, 1.0, true, 2.0);
+	AutoExecConfig(true, "l4d_reverse_ff");
+	
+	GetCvars();
+	
+	cvar_ReverseFFenabled.AddChangeHook(action_ConVarChanged);
+	cvar_AdminImmune.AddChangeHook(action_ConVarChanged);
+	cvar_SpclAmmoDamage.AddChangeHook(action_ConVarChanged);
+}
+
+public int action_ConVarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
+{
+	GetCvars();
+}
+
+void GetCvars()
+{
+	g_bCvarReverseFFenabled = cvar_ReverseFFenabled.BoolValue;
+	g_bCvarAdminImmune = cvar_AdminImmune.BoolValue;
+	g_fCvarSpclAmmoDamage = cvar_SpclAmmoDamage.FloatValue;
 }
 
 public void OnClientPutInServer(int client)
@@ -42,7 +91,7 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 		{
 			if (weapon > 0 || IsWeaponGrenadeLauncher(inflictor)) 										//if weapon caused damage proceed to reverse damage
 			{
-				if (!IsClientAdmin(attacker))												//admins immune to reverse damage, but still do no damage to victim
+				if (!(IsClientAdmin(attacker) && g_bCvarAdminImmune == true))								//check admin immunity
 				{
 					if (IsSpecialAmmo(weapon, attacker, inflictor))									//if weapon has explosive or incendiary ammo
 					{
@@ -78,7 +127,7 @@ stock bool IsWeaponGrenadeLauncher(int inflictor)
 
 stock bool IsSpecialAmmo(int weapon, int attacker, int inflictor)
 {
-	if(weapon > 0 && attacker == inflictor) 										//prevent error with melee weapons which have different inflictor
+	if (weapon > 0 && attacker == inflictor) 										//prevent error with melee weapons which have different inflictor
 	{
 		int iAmmoBits = GetEntProp(weapon, Prop_Send, "m_upgradeBitVec");
 		if (iAmmoBits == 1 || iAmmoBits == 5 || iAmmoBits == 2 || iAmmoBits == 6)					//0=none, 1=incendiary, 2=explosive, (4=laser), 5=incendiary+laser, 6=explosive+laser
