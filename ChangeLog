@@ -1,14 +1,46 @@
-05-Dec-2020 v1.0 Initial release
+05-Dec-2020 v1.0
+- Initial release.
 
-08-Dec-2020 v1.1 If attacker weapon has incendiary/explosive ammo, increase damage to attacker by 12.5%.
+08-Dec-2020 v1.1
+- If attacker used incendiary/explosive ammo, increase damage to attacker by 12.5%.
 
-09-Dec-2020 v1.2 Added dynamically changeable ConVars:
+09-Dec-2020 v1.2
+- Added dynamically changeable ConVars:
 
-  reverseff_enabled: 	set to 1 to enable plugin, 0 to disable
-  reverseff_immunity: 	set to 1 to make admins immune to reverse FF damage, set to 0 to reverse FF damage for everyone
-  reverseff_multiplier: if attacker is using explosive or incendiary ammo, increase damage by this multiplier
-			default is 1.125 (12.5% extra damage), 1.0=no extra damage, 2.0=double damage
+reverseff_enabled [default: 1]
+· 1 enable plugin
+· 0 disable plugin
 
-Also added a standard ConVar:
+reverseff_immunity [default: 1]
+· 1 admins are immune to reverse friendly-fire damage
+· 0 admins are not immune to reverse friendly-fire damage
+· Note that the victim does not take damage with either setting.
 
-  reverseff_version: 	shows the plugin version
+reverseff_multiplier [default: 1.125]
+· increase damage by this multiplier if explosive/incendiary ammo
+· 1.0 normal, no extra damage
+· 1.5 50% extra damage
+· 2.0 100% extra damage (double damage)
+· The default value of 1.125 results in 12.5% extra damage.
+
+- Also added a standard ConVar:
+
+reverseff_version
+· shows the plugin version
+
+13-Dec-2020 v1.3
+- Added dynamically changeable ConVar:
+
+reverseff_bot [default: 0]
+· 0 attacker does not have friendly-fire reversed when victim is a bot
+· 1 to reverse friendly-fire against all victims, human and bot
+· Note that the victim (bot) does not take damage with either setting.
+
+- Added detection for grenade launcher special ammo.
+
+21-Dec-2020 v1.4
+- Option to specify maximum damage allowed per chapter before ban. (default: 180)
+("reverseff_maxdamage")
+
+- Option to specify ban duration in minutes when reverseff_maxdamage is exceeded. (default: 10)
+("reverseff_banduration")
