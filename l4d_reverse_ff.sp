@@ -122,7 +122,7 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 					damage *= g_fCvarDamageMultiplier;										//damage * "reverseff_multiplier"
 				}
 				g_fAccumDamage[attacker] += damage;											//accumulate damage total for attacker
-				//PrintToServer("Plyr: %N, Dmg: %f, AcmDamage: %f", attacker, damage, g_fAccumDamage[attacker]);
+				PrintToServer("Plyr: %N, Dmg: %f, AcmDamage: %f", attacker, damage, g_fAccumDamage[attacker]);
 				if (g_fAccumDamage[attacker] > g_fMaxAlwdDamage)									//does accumulated damage exceed "reverseff_maxdamage"
 				{
 					BanClient(attacker, g_iBanDuration, BANFLAG_AUTO, "ExcessiveFF", "Excessive Friendly-Fire", _, attacker);	//ban attacker for "reverseff_banduration"
