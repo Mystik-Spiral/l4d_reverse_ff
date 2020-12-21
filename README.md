@@ -6,6 +6,10 @@ Although this plugin discourages griefers/team killers since they can only damag
 
 This plugin reverses damage from the grenade launcher, but does not otherwise reverse explosion damage.  This plugin does not reverse molotov/gascan damage and I do not intend to add it, though I may make a separate plugin to handle molotov/gascan damage.
 
-- Option to specify extra damage if attacker is using explosive/incendiary ammo. (default=12.5%)
-- Option to not reverse friendly-fire when attacker is an admin. (default)
-- Option to not reverse friendly-fire when victim is a bot. (default)
+- Option to specify extra damage if attacker is using explosive/incendiary ammo. (default: 12.5%)
+- Option to not reverse friendly-fire when attacker is an admin. (default: true)
+- Option to reverse friendly-fire when victim is a bot. (default: false)
+- Option to specify maximum damage allowed per chapter before ban. (default: 180)
+- Option to specify ban duration in minutes. (default: 10)
+
+Plugin discussion: https://forums.alliedmods.net/showthread.php?t=329035
