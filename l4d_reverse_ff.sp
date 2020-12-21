@@ -4,17 +4,10 @@ Reverse Friendly-Fire plugin (l4d_reverse_ff) by Mystik Spiral
 
 This plugin reverses all friendly-fire... the attacker takes all of the damage and the victim takes none.
 This forces players to be more precise with their shots... or they will spend a lot of time on the ground.
+This also discourages griefers/team killers since they can only damage themselves and no one else.
 
-Although this plugin discourages griefers/team killers since they can only damage themselves and no one else,
-the first objective is to force players to improve their shooting tatics and aim.  The second objective is to
-encourage new/inexperienced players to only join servers that match their skillset, rather than trying to play
-in expert mode.  Before this plugin, beginners had no penalty for joining an expert game and constantly
-incapping their teammates.
-
-This plugin reverses damage from the grenade launcher, but does not otherwise reverse explosion damage.
-This plugin does not reverse molotov/gascan damage and I do not intend to add it, though I may make a
-separate plugin to handle molotov/gascan damage.
-
+This plugin reverses damage from the grenade launcher, but does not otherwise reverse bomb/explosion damage.
+This plugin does not reverse molotov/fire damage and I do not intend to add it.
 Option to specify extra damage if attacker is using explosive/incendiary ammo. (default=12.5%)
 Option to not reverse friendly-fire when attacker is an admin. (default)
 Option to not reverse friendly-fire when victim is a bot. (default)
@@ -28,18 +21,23 @@ Option to not reverse friendly-fire when victim is a bot. (default)
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.3"
+#define PLUGIN_VERSION "1.4"
 #define CVAR_FLAGS FCVAR_NOTIFY
 
 ConVar cvar_reverseff_enabled;
 ConVar cvar_reverseff_immunity;
 ConVar cvar_reverseff_multiplier;
 ConVar cvar_reverseff_bot;
+ConVar cvar_reverseff_maxdamage;
+ConVar cvar_reverseff_banduration;
 
-bool g_bCvarPluginEnabled;
+bool g_bCvarRffPluginEnabled;
 bool g_bCvarAdminImmunity;
 float g_fCvarDamageMultiplier;
 bool g_bCvarReverseIfBot;
+float g_fAccumDamage[MAXPLAYERS+1];
+float g_fMaxAlwdDamage;
+int g_iBanDuration;
 
 public Plugin myinfo =
 {
@@ -68,6 +66,8 @@ public void OnPluginStart()
 	cvar_reverseff_immunity = CreateConVar("reverseff_immunity", "1", "Admin immune to reversing FF", CVAR_FLAGS, true, 0.0, true, 1.0);
 	cvar_reverseff_multiplier = CreateConVar("reverseff_multiplier", "1.125", "Special ammo damage multiplier", CVAR_FLAGS, true, 1.0, true, 2.0);
 	cvar_reverseff_bot = CreateConVar("reverseff_bot", "0", "Reverse FF if victim is bot", CVAR_FLAGS, true, 0.0, true, 1.0);
+	cvar_reverseff_maxdamage = CreateConVar("reverseff_maxdamage", "180", "Maximum damage allowed before kicking", CVAR_FLAGS, true, 0.0, true, 999.0);
+	cvar_reverseff_banduration = CreateConVar("reverseff_banduration", "10", "Ban duration in minutes (0=permanent)", CVAR_FLAGS, true, 0.0, false);
 	AutoExecConfig(true, "l4d_reverse_ff");
 	
 	GetCvars();
@@ -76,6 +76,8 @@ public void OnPluginStart()
 	cvar_reverseff_immunity.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_multiplier.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_bot.AddChangeHook(action_ConVarChanged);
+	cvar_reverseff_maxdamage.AddChangeHook(action_ConVarChanged);
+	cvar_reverseff_banduration.AddChangeHook(action_ConVarChanged);
 }
 
 public int action_ConVarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
@@ -85,20 +87,23 @@ public int action_ConVarChanged(ConVar convar, const char[] oldValue, const char
 
 void GetCvars()
 {
-	g_bCvarPluginEnabled = cvar_reverseff_enabled.BoolValue;
+	g_bCvarRffPluginEnabled = cvar_reverseff_enabled.BoolValue;
 	g_bCvarAdminImmunity = cvar_reverseff_immunity.BoolValue;
 	g_fCvarDamageMultiplier = cvar_reverseff_multiplier.FloatValue;
 	g_bCvarReverseIfBot = cvar_reverseff_bot.BoolValue;
+	g_fMaxAlwdDamage = cvar_reverseff_maxdamage.FloatValue;
+	g_iBanDuration = cvar_reverseff_banduration.IntValue;
 }
 
 public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_OnTakeDamage, OnTakeDamage);
+	g_fAccumDamage[client] = 0.0;
 }
 
 public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3])
 {
-	if (!g_bCvarPluginEnabled)
+	if (!g_bCvarRffPluginEnabled)
 	{
 		return Plugin_Continue;
 	}
@@ -114,9 +119,17 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 			{
 				if (IsSpecialAmmo(weapon, attacker, inflictor, damagetype, bWeaponGL))							//special ammo checks
 				{
-					damage = damage * g_fCvarDamageMultiplier;									//damage * "reverseff_multiplier"
+					damage *= g_fCvarDamageMultiplier;										//damage * "reverseff_multiplier"
 				}
-				SDKHooks_TakeDamage(attacker, inflictor, victim, damage, damagetype, weapon, damageForce, damagePosition);		//inflict damage to attacker
+				g_fAccumDamage[attacker] += damage;											//accumulate damage total for attacker
+				PrintToServer("Plyr: %N, Dmg: %f, AcmDamage: %f", attacker, damage, g_fAccumDamage[attacker]);
+				if (g_fAccumDamage[attacker] > g_fMaxAlwdDamage)									//does accumulated damage exceed "reverseff_maxdamage"
+				{
+					BanClient(attacker, g_iBanDuration, BANFLAG_AUTO, "ExcessiveFF", "Excessive Friendly-Fire", _, attacker);	//ban attacker for "reverseff_banduration"
+					g_fAccumDamage[attacker] = 0.0;											//reset accumulated damage
+					return Plugin_Handled;												//do not inflict damage since player was banned
+				}
+				SDKHooks_TakeDamage(attacker, inflictor, attacker, damage, damagetype, weapon, damageForce, damagePosition);		//inflict damage to attacker
 			}
 			return Plugin_Handled; 														//no damage for victim
 		}
