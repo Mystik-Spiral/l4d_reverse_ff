@@ -61,7 +61,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
-	CreateConVar("reverseff_version", PLUGIN_VERSION, "Reverse Friendly-Fire", CVAR_FLAGS|FCVAR_DONTRECORD);
+	CreateConVar("reverseff_version", PLUGIN_VERSION, "Reverse Friendly-Fire", FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	cvar_reverseff_enabled = CreateConVar("reverseff_enabled", "1", "Enable this plugin", CVAR_FLAGS, true, 0.0, true, 1.0);
 	cvar_reverseff_immunity = CreateConVar("reverseff_immunity", "1", "Admin immune to reversing FF", CVAR_FLAGS, true, 0.0, true, 1.0);
 	cvar_reverseff_multiplier = CreateConVar("reverseff_multiplier", "1.125", "Special ammo damage multiplier", CVAR_FLAGS, true, 1.0, true, 2.0);
