@@ -21,7 +21,7 @@ Option to not reverse friendly-fire when victim is a bot. (default)
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.4"
+#define PLUGIN_VERSION "1.4.1"
 #define CVAR_FLAGS FCVAR_NOTIFY
 
 ConVar cvar_reverseff_enabled;
