@@ -1,16 +1,22 @@
 /*
 
-Reverse Friendly-Fire plugin (l4d_reverse_ff) by Mystik Spiral
+Reverse Friendly-Fire (l4d_reverse_ff) by Mystik Spiral
 
-This plugin reverses all friendly-fire... the attacker takes all of the damage and the victim takes none.
+This Left4Dead2 SourceMod plugin reverses friendly-fire... the attacker takes all of the damage and the victim takes none.
 This forces players to be more precise with their shots... or they will spend a lot of time on the ground.
-This also discourages griefers/team killers since they can only damage themselves and no one else.
 
-This plugin reverses damage from the grenade launcher, but does not otherwise reverse bomb/explosion damage.
-This plugin does not reverse molotov/fire damage and I do not intend to add it.
-Option to specify extra damage if attacker is using explosive/incendiary ammo. (default=12.5%)
-Option to not reverse friendly-fire when attacker is an admin. (default)
-Option to not reverse friendly-fire when victim is a bot. (default)
+Although this plugin discourages griefers/team killers since they can only damage themselves and no one else, the first objective is to force players to improve their shooting tatics and aim. The second objective is to encourage new/inexperienced players to only join games with a difficulty that match their skillset, rather than trying to play at a difficulty above their ability and constantly incapping their teammates.
+
+This plugin reverses damage from the grenade launcher, but does not otherwise reverse explosion damage. This plugin does not reverse molotov/gascan damage and I do not intend to add it, though I may make a separate plugin to handle molotov/gascan damage.
+
+    Option to specify extra damage if attacker is using explosive/incendiary ammo. [reverseff_multiplier (default: 1.125 {12.5%})]
+    Option to not reverse friendly-fire when attacker is an admin. [reverseff_immunity (default: true)]
+    Option to reverse friendly-fire when victim is a bot. [reverseff_bot (default: false)]
+    Option to specify maximum damage allowed per chapter before ban. [reverseff_maxdamage (default: 180)]
+    Option to specify ban duration in minutes. [reverseff_banduration (default: 10)]
+
+Want to contribute code enhancements?
+Create a pull request using this GitHub repository: https://github.com/Mystik-Spiral/l4d_reverse_ff
 
 */
 
@@ -114,7 +120,7 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 		//PrintToServer("bWeaponGL: %b, weapon: %i", bWeaponGL, weapon);
 		if (weapon > 0 || bWeaponGL) 														//if weapon caused damage
 		{
-			//PrintToServer("g_bCvarAdminImmunity: %b, g_bCvarReverseIfBot: %b", g_bCvarAdminImmunity, g_bCvarReverseIfBot);
+			//PrintToServer("reverseff_immunity: %b, reverseff_bot: %b", g_bCvarAdminImmunity, g_bCvarReverseIfBot);
 			if (!((IsClientAdmin(attacker) && g_bCvarAdminImmunity == true) || (IsFakeClient(victim) && g_bCvarReverseIfBot == false)))	//check admin immunity or bot
 			{
 				if (IsSpecialAmmo(weapon, attacker, inflictor, damagetype, bWeaponGL))							//special ammo checks
@@ -122,7 +128,7 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 					damage *= g_fCvarDamageMultiplier;										//damage * "reverseff_multiplier"
 				}
 				g_fAccumDamage[attacker] += damage;											//accumulate damage total for attacker
-				PrintToServer("Plyr: %N, Dmg: %f, AcmDamage: %f", attacker, damage, g_fAccumDamage[attacker]);
+				//PrintToServer("Plyr: %N, Dmg: %f, AcmDmg: %f", attacker, damage, g_fAccumDamage[attacker]);
 				if (g_fAccumDamage[attacker] > g_fMaxAlwdDamage)									//does accumulated damage exceed "reverseff_maxdamage"
 				{
 					BanClient(attacker, g_iBanDuration, BANFLAG_AUTO, "ExcessiveFF", "Excessive Friendly-Fire", _, attacker);	//ban attacker for "reverseff_banduration"
