@@ -44,3 +44,6 @@ reverseff_bot [default: 0]
 
 - Option to specify ban duration in minutes when reverseff_maxdamage is exceeded. (default: 10)
 ("reverseff_banduration")
+
+21-Dec-2020 v1.4.1
+- Minor change to convar flag.
