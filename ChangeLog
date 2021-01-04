@@ -47,3 +47,6 @@ reverseff_bot [default: 0]
 
 21-Dec-2020 v1.4.1
 - Minor change to convar flag.
+
+04-Jan-2021 v1.5
+- Now reverses friendly-fire for mounted machine guns too.
