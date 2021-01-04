@@ -27,7 +27,7 @@ Create a pull request using this GitHub repository: https://github.com/Mystik-Sp
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.4.1"
+#define PLUGIN_VERSION "1.5"
 #define CVAR_FLAGS FCVAR_NOTIFY
 
 ConVar cvar_reverseff_enabled;
@@ -113,14 +113,19 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 	{
 		return Plugin_Continue;
 	}
-	//PrintToServer("Vic: %i, Atk: %i, Inf: %i, Dam: %f, DamTyp: %i, Wpn: %i", victim, attacker, inflictor, damage, damagetype, weapon);
+	//PrintToServer("Vic: %i, Atk: %i, Inf: %i, Dam: %f, DamTyp: %i, Wpn: %i", victim, attacker, inflictor, damage, damagetype, weapon);		//debug damage
 	if (IsValidClientAndInGameAndSurvivor(attacker) && IsValidClientAndInGameAndSurvivor(victim) && victim != attacker)				//attacker and victim checks
 	{
-		bool bWeaponGL = IsWeaponGrenadeLauncher(inflictor);											//is weapon grenade launcher
-		//PrintToServer("bWeaponGL: %b, weapon: %i", bWeaponGL, weapon);
-		if (weapon > 0 || bWeaponGL) 														//if weapon caused damage
+		char sInflictorClass[64];
+		if (inflictor > MaxClients)
 		{
-			//PrintToServer("reverseff_immunity: %b, reverseff_bot: %b", g_bCvarAdminImmunity, g_bCvarReverseIfBot);
+			GetEdictClassname(inflictor, sInflictorClass, sizeof(sInflictorClass));
+		}
+		bool bWeaponGL = IsWeaponGrenadeLauncher(sInflictorClass);										//is weapon grenade launcher
+		bool bWeaponMG = IsWeaponMinigun(sInflictorClass);											//is weapon minigun
+		//PrintToServer("GL: %b, MG: %b, InfCls: %s, weapon: %i", bWeaponGL, bWeaponMG, sInflictorClass, weapon);				//debug weapon
+		if (weapon > 0 || bWeaponGL || bWeaponMG) 												//if weapon caused damage
+		{
 			if (!((IsClientAdmin(attacker) && g_bCvarAdminImmunity == true) || (IsFakeClient(victim) && g_bCvarReverseIfBot == false)))	//check admin immunity or bot
 			{
 				if (IsSpecialAmmo(weapon, attacker, inflictor, damagetype, bWeaponGL))							//special ammo checks
@@ -128,7 +133,7 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 					damage *= g_fCvarDamageMultiplier;										//damage * "reverseff_multiplier"
 				}
 				g_fAccumDamage[attacker] += damage;											//accumulate damage total for attacker
-				//PrintToServer("Plyr: %N, Dmg: %f, AcmDmg: %f", attacker, damage, g_fAccumDamage[attacker]);
+				//PrintToServer("Plyr: %N, Dmg: %f, AcmDmg: %f", attacker, damage, g_fAccumDamage[attacker]);				//debug acculated damage
 				if (g_fAccumDamage[attacker] > g_fMaxAlwdDamage)									//does accumulated damage exceed "reverseff_maxdamage"
 				{
 					BanClient(attacker, g_iBanDuration, BANFLAG_AUTO, "ExcessiveFF", "Excessive Friendly-Fire", _, attacker);	//ban attacker for "reverseff_banduration"
@@ -148,37 +153,27 @@ stock bool IsValidClient(int client)
 	return (client > 0 && client <= MaxClients);
 }
 
-stock bool IsWeaponGrenadeLauncher(int inflictor)
+stock bool IsWeaponGrenadeLauncher(char[] sInflictorClass)
 {
-	if (inflictor > MaxClients)
-	{
-		char sInflictorClass[64];
-		GetEdictClassname(inflictor, sInflictorClass, sizeof(sInflictorClass));
-		if (StrEqual(sInflictorClass, "grenade_launcher_projectile"))
-		{
-			return true;
-		}
-	}
-	return false;
+	return (StrEqual(sInflictorClass, "grenade_launcher_projectile"));
+}
+
+stock bool IsWeaponMinigun(char[] sInflictorClass)
+{
+	return (StrEqual(sInflictorClass, "prop_minigun") || StrEqual(sInflictorClass, "prop_minigun_l4d1") || StrEqual(sInflictorClass, "prop_mounted_machine_gun"));
 }
 
 stock bool IsSpecialAmmo(int weapon, int attacker, int inflictor, int damagetype, bool bWeaponGL)
 {
-	if (weapon > 0 && attacker == inflictor) 						//prevent error with melee weapons which have different inflictor
+	if ((weapon > 0 && attacker == inflictor) && (damagetype & DMG_BURN || damagetype & DMG_BLAST))		//damage from gun with special ammo
 	{
-		if (damagetype & DMG_BURN || damagetype & DMG_BLAST)				//damage from gun with special ammo
-		{
-			return true;
-		}
+		return true;
 	}
-	if (bWeaponGL)
+	if ((bWeaponGL) && (damagetype & DMG_BURN))								//damage from grenade launcher with incendiary ammo
 	{
-		if (damagetype & DMG_BURN)							//damage from grenade launcher with incendiary ammo
-		{
-			return true;
-		}
+		return true;
 	}
-	return false;										//damage from weapon with regular ammo
+	return false;												//damage from melee weapon or weapon with regular ammo
 }
 
 stock bool IsClientAdmin(int client)
