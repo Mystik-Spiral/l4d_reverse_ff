@@ -50,3 +50,6 @@ reverseff_bot [default: 0]
 
 04-Jan-2021 v1.5
 - Now reverses friendly-fire for mounted machine guns too.
+
+11-Jan-2021 v1.6
+- Option to reverse friendly-fire when victim is incapacitated. [reverseff_incapped (default: false)]
