@@ -14,6 +14,7 @@ This plugin reverses damage from the grenade launcher, but does not otherwise re
     Option to reverse friendly-fire when victim is a bot. [reverseff_bot (default: false)]
     Option to specify maximum damage allowed per chapter before ban. [reverseff_maxdamage (default: 180)]
     Option to specify ban duration in minutes. [reverseff_banduration (default: 10)]
+    Option to reverse friendly-fire when victim is incapacitated. [reverseff_incapped (default: false)]
 
 Want to contribute code enhancements?
 Create a pull request using this GitHub repository: https://github.com/Mystik-Spiral/l4d_reverse_ff
@@ -27,7 +28,7 @@ Create a pull request using this GitHub repository: https://github.com/Mystik-Sp
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.5"
+#define PLUGIN_VERSION "1.6"
 #define CVAR_FLAGS FCVAR_NOTIFY
 
 ConVar cvar_reverseff_enabled;
@@ -36,6 +37,7 @@ ConVar cvar_reverseff_multiplier;
 ConVar cvar_reverseff_bot;
 ConVar cvar_reverseff_maxdamage;
 ConVar cvar_reverseff_banduration;
+ConVar cvar_reverseff_incapped;
 
 bool g_bCvarRffPluginEnabled;
 bool g_bCvarAdminImmunity;
@@ -44,6 +46,7 @@ bool g_bCvarReverseIfBot;
 float g_fAccumDamage[MAXPLAYERS+1];
 float g_fMaxAlwdDamage;
 int g_iBanDuration;
+bool g_bCvarReverseIfIncapped;
 
 public Plugin myinfo =
 {
@@ -74,6 +77,7 @@ public void OnPluginStart()
 	cvar_reverseff_bot = CreateConVar("reverseff_bot", "0", "Reverse FF if victim is bot", CVAR_FLAGS, true, 0.0, true, 1.0);
 	cvar_reverseff_maxdamage = CreateConVar("reverseff_maxdamage", "180", "Maximum damage allowed before kicking", CVAR_FLAGS, true, 0.0, true, 999.0);
 	cvar_reverseff_banduration = CreateConVar("reverseff_banduration", "10", "Ban duration in minutes (0=permanent)", CVAR_FLAGS, true, 0.0, false);
+	cvar_reverseff_incapped = CreateConVar("reverseff_incapped", "0", "Reverse FF if victim is incapped", CVAR_FLAGS, true, 0.0, true, 1.0);
 	AutoExecConfig(true, "l4d_reverse_ff");
 	
 	GetCvars();
@@ -84,6 +88,7 @@ public void OnPluginStart()
 	cvar_reverseff_bot.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_maxdamage.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_banduration.AddChangeHook(action_ConVarChanged);
+	cvar_reverseff_incapped.AddChangeHook(action_ConVarChanged);
 }
 
 public int action_ConVarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
@@ -99,6 +104,7 @@ void GetCvars()
 	g_bCvarReverseIfBot = cvar_reverseff_bot.BoolValue;
 	g_fMaxAlwdDamage = cvar_reverseff_maxdamage.FloatValue;
 	g_iBanDuration = cvar_reverseff_banduration.IntValue;
+	g_bCvarReverseIfIncapped = cvar_reverseff_incapped.BoolValue;
 }
 
 public void OnClientPutInServer(int client)
@@ -113,39 +119,57 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 	{
 		return Plugin_Continue;
 	}
-	//PrintToServer("Vic: %i, Atk: %i, Inf: %i, Dam: %f, DamTyp: %i, Wpn: %i", victim, attacker, inflictor, damage, damagetype, weapon);		//debug damage
-	if (IsValidClientAndInGameAndSurvivor(attacker) && IsValidClientAndInGameAndSurvivor(victim) && victim != attacker)				//attacker and victim checks
+	//debug damage
+	//PrintToServer("Vic: %i, Atk: %i, Inf: %i, Dam: %f, DamTyp: %i, Wpn: %i", victim, attacker, inflictor, damage, damagetype, weapon);
+	//attacker and victim checks
+	if (IsValidClientAndInGameAndSurvivor(attacker) && IsValidClientAndInGameAndSurvivor(victim) && victim != attacker)
 	{
 		char sInflictorClass[64];
 		if (inflictor > MaxClients)
 		{
 			GetEdictClassname(inflictor, sInflictorClass, sizeof(sInflictorClass));
 		}
-		bool bWeaponGL = IsWeaponGrenadeLauncher(sInflictorClass);										//is weapon grenade launcher
-		bool bWeaponMG = IsWeaponMinigun(sInflictorClass);											//is weapon minigun
-		//PrintToServer("GL: %b, MG: %b, InfCls: %s, weapon: %i", bWeaponGL, bWeaponMG, sInflictorClass, weapon);				//debug weapon
-		if (weapon > 0 || bWeaponGL || bWeaponMG) 												//if weapon caused damage
+		//is weapon grenade launcher
+		bool bWeaponGL = IsWeaponGrenadeLauncher(sInflictorClass);
+		//is weapon minigun
+		bool bWeaponMG = IsWeaponMinigun(sInflictorClass);
+		//debug weapon
+		//PrintToServer("GL: %b, MG: %b, InfCls: %s, weapon: %i", bWeaponGL, bWeaponMG, sInflictorClass, weapon);
+		//if weapon caused damage
+		if (weapon > 0 || bWeaponGL || bWeaponMG)
 		{
-			if (!((IsClientAdmin(attacker) && g_bCvarAdminImmunity == true) || (IsFakeClient(victim) && g_bCvarReverseIfBot == false)))	//check admin immunity or bot
+			//do not reverse friendly-fire for these three situations
+			if (!((IsClientAdmin(attacker) && g_bCvarAdminImmunity == true) || (IsFakeClient(victim) && g_bCvarReverseIfBot == false) || (IsClientIncapped(victim) && g_bCvarReverseIfIncapped == false)))
 			{
-				if (IsSpecialAmmo(weapon, attacker, inflictor, damagetype, bWeaponGL))							//special ammo checks
+				//special ammo checks
+				if (IsSpecialAmmo(weapon, attacker, inflictor, damagetype, bWeaponGL))
 				{
-					damage *= g_fCvarDamageMultiplier;										//damage * "reverseff_multiplier"
+					//damage * "reverseff_multiplier"
+					damage *= g_fCvarDamageMultiplier;
 				}
-				g_fAccumDamage[attacker] += damage;											//accumulate damage total for attacker
-				//PrintToServer("Plyr: %N, Dmg: %f, AcmDmg: %f", attacker, damage, g_fAccumDamage[attacker]);				//debug acculated damage
-				if (g_fAccumDamage[attacker] > g_fMaxAlwdDamage)									//does accumulated damage exceed "reverseff_maxdamage"
+				//accumulate damage total for attacker
+				g_fAccumDamage[attacker] += damage;
+				//debug acculated damage
+				//PrintToServer("Plyr: %N, Dmg: %f, AcmDmg: %f", attacker, damage, g_fAccumDamage[attacker]);
+				//does accumulated damage exceed "reverseff_maxdamage"
+				if (g_fAccumDamage[attacker] > g_fMaxAlwdDamage)
 				{
-					BanClient(attacker, g_iBanDuration, BANFLAG_AUTO, "ExcessiveFF", "Excessive Friendly-Fire", _, attacker);	//ban attacker for "reverseff_banduration"
-					g_fAccumDamage[attacker] = 0.0;											//reset accumulated damage
-					return Plugin_Handled;												//do not inflict damage since player was banned
+					//ban attacker for "reverseff_banduration"
+					BanClient(attacker, g_iBanDuration, BANFLAG_AUTO, "ExcessiveFF", "Excessive Friendly-Fire", _, attacker);
+					//reset accumulated damage
+					g_fAccumDamage[attacker] = 0.0;
+					//do not inflict damage since player was banned
+					return Plugin_Handled;
 				}
-				SDKHooks_TakeDamage(attacker, inflictor, attacker, damage, damagetype, weapon, damageForce, damagePosition);		//inflict damage to attacker
+				//inflict damage to attacker
+				SDKHooks_TakeDamage(attacker, inflictor, attacker, damage, damagetype, weapon, damageForce, damagePosition);
 			}
-			return Plugin_Handled; 														//no damage for victim
+			//no damage for victim
+			return Plugin_Handled;
 		}
 	}
-	return Plugin_Continue;																//all other damage behaves normal
+	//all other damage behaves normal
+	return Plugin_Continue;
 }
 
 stock bool IsValidClient(int client)
@@ -165,15 +189,18 @@ stock bool IsWeaponMinigun(char[] sInflictorClass)
 
 stock bool IsSpecialAmmo(int weapon, int attacker, int inflictor, int damagetype, bool bWeaponGL)
 {
-	if ((weapon > 0 && attacker == inflictor) && (damagetype & DMG_BURN || damagetype & DMG_BLAST))		//damage from gun with special ammo
+	//damage from gun with special ammo
+	if ((weapon > 0 && attacker == inflictor) && (damagetype & DMG_BURN || damagetype & DMG_BLAST))
 	{
 		return true;
 	}
-	if ((bWeaponGL) && (damagetype & DMG_BURN))								//damage from grenade launcher with incendiary ammo
+	//damage from grenade launcher with incendiary ammo
+	if ((bWeaponGL) && (damagetype & DMG_BURN))
 	{
 		return true;
 	}
-	return false;												//damage from melee weapon or weapon with regular ammo
+	//damage from melee weapon or weapon with regular ammo
+	return false;
 }
 
 stock bool IsClientAdmin(int client)
@@ -184,4 +211,10 @@ stock bool IsClientAdmin(int client)
 stock bool IsValidClientAndInGameAndSurvivor(int client)
 {
     return (client > 0 && client <= MaxClients && IsClientInGame(client) && GetClientTeam(client) == 2);
+}
+
+stock bool IsClientIncapped(int client)
+{
+	//convert integer to boolean for return value
+	return !!GetEntProp(client, Prop_Send, "m_isIncapacitated", 1);
 }
