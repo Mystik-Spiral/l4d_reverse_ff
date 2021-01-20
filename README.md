@@ -14,5 +14,6 @@ This plugin does not reverse molotov/gascan damage and I do not intend to add it
 - Option to specify maximum damage allowed per chapter before ban. [reverseff_maxdamage (default: 180)]
 - Option to specify ban duration in minutes. [reverseff_banduration (default: 10)]
 - Option to reverse friendly-fire when victim is incapacitated. [reverseff_incapped (default: false)]
+- Option to treat friendly-fire as self-damage. [reverseff_self (default: false)]
 
 Plugin discussion: https://forums.alliedmods.net/showthread.php?t=329035
