@@ -53,3 +53,6 @@ reverseff_bot [default: 0]
 
 11-Jan-2021 v1.6
 - Option to reverse friendly-fire when victim is incapacitated. [reverseff_incapped (default: false)]
+
+20-Jan-2021 v1.7
+- Option to treat friendly-fire as self-damage. [reverseff_self (default: false)]
