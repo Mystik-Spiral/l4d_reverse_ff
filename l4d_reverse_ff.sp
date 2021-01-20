@@ -15,6 +15,7 @@ This plugin reverses damage from the grenade launcher, but does not otherwise re
     Option to specify maximum damage allowed per chapter before ban. [reverseff_maxdamage (default: 180)]
     Option to specify ban duration in minutes. [reverseff_banduration (default: 10)]
     Option to reverse friendly-fire when victim is incapacitated. [reverseff_incapped (default: false)]
+    Option to treat friendly-fire damage as self damage (or reversed accusations). [reverseff_self (default: false)]
 
 Want to contribute code enhancements?
 Create a pull request using this GitHub repository: https://github.com/Mystik-Spiral/l4d_reverse_ff
@@ -28,7 +29,7 @@ Create a pull request using this GitHub repository: https://github.com/Mystik-Sp
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.6"
+#define PLUGIN_VERSION "1.7"
 #define CVAR_FLAGS FCVAR_NOTIFY
 
 ConVar cvar_reverseff_enabled;
@@ -38,6 +39,7 @@ ConVar cvar_reverseff_bot;
 ConVar cvar_reverseff_maxdamage;
 ConVar cvar_reverseff_banduration;
 ConVar cvar_reverseff_incapped;
+ConVar cvar_reverseff_self;
 
 bool g_bCvarRffPluginEnabled;
 bool g_bCvarAdminImmunity;
@@ -47,10 +49,11 @@ float g_fAccumDamage[MAXPLAYERS+1];
 float g_fMaxAlwdDamage;
 int g_iBanDuration;
 bool g_bCvarReverseIfIncapped;
+bool g_bCvarSelfDamage;
 
 public Plugin myinfo =
 {
-	name = "[L4D2] Reverse Friendly-Fire",
+	name = "[L4D & L4D2] Reverse Friendly-Fire",
 	author = "Mystic Spiral",
 	description = "Team attacker takes friendly-fire damage, victim takes no damage.",
 	version = PLUGIN_VERSION,
@@ -60,12 +63,12 @@ public Plugin myinfo =
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	EngineVersion test = GetEngineVersion();
-	if ( test != Engine_Left4Dead2 )
+	if ( test == Engine_Left4Dead2 || test == Engine_Left4Dead )
 	{
-		strcopy(error, err_max, "Plugin only supports Left 4 Dead 2.");
-		return APLRes_SilentFailure;
+		return APLRes_Success;
 	}
-	return APLRes_Success;
+	strcopy(error, err_max, "Plugin only supports Left 4 Dead 1 & 2.");
+	return APLRes_SilentFailure;
 }
 
 public void OnPluginStart()
@@ -78,6 +81,7 @@ public void OnPluginStart()
 	cvar_reverseff_maxdamage = CreateConVar("reverseff_maxdamage", "180", "Maximum damage allowed before kicking", CVAR_FLAGS, true, 0.0, true, 999.0);
 	cvar_reverseff_banduration = CreateConVar("reverseff_banduration", "10", "Ban duration in minutes (0=permanent)", CVAR_FLAGS, true, 0.0, false);
 	cvar_reverseff_incapped = CreateConVar("reverseff_incapped", "0", "Reverse FF if victim is incapped", CVAR_FLAGS, true, 0.0, true, 1.0);
+	cvar_reverseff_self = CreateConVar("reverseff_self", "0", "Treat FF as self damage", CVAR_FLAGS, true, 0.0, true, 1.0);
 	AutoExecConfig(true, "l4d_reverse_ff");
 	
 	GetCvars();
@@ -89,6 +93,7 @@ public void OnPluginStart()
 	cvar_reverseff_maxdamage.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_banduration.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_incapped.AddChangeHook(action_ConVarChanged);
+	cvar_reverseff_self.AddChangeHook(action_ConVarChanged);
 }
 
 public int action_ConVarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
@@ -105,6 +110,7 @@ void GetCvars()
 	g_fMaxAlwdDamage = cvar_reverseff_maxdamage.FloatValue;
 	g_iBanDuration = cvar_reverseff_banduration.IntValue;
 	g_bCvarReverseIfIncapped = cvar_reverseff_incapped.BoolValue;
+	g_bCvarSelfDamage = cvar_reverseff_self.BoolValue;
 }
 
 public void OnClientPutInServer(int client)
@@ -150,7 +156,7 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 				//accumulate damage total for attacker
 				g_fAccumDamage[attacker] += damage;
 				//debug acculated damage
-				//PrintToServer("Plyr: %N, Dmg: %f, AcmDmg: %f", attacker, damage, g_fAccumDamage[attacker]);
+				//PrintToServer("Atk: %N, Dmg: %f, AcmDmg: %f, MaxDmg: %f", attacker, damage, g_fAccumDamage[attacker], g_fMaxAlwdDamage);
 				//does accumulated damage exceed "reverseff_maxdamage"
 				if (g_fAccumDamage[attacker] > g_fMaxAlwdDamage)
 				{
@@ -161,8 +167,14 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 					//do not inflict damage since player was banned
 					return Plugin_Handled;
 				}
+				//check whether to treat FF as self-damage
+				int vicatk = victim;
+				if (g_bCvarSelfDamage)
+				{
+					vicatk = attacker;
+				}
 				//inflict damage to attacker
-				SDKHooks_TakeDamage(attacker, inflictor, attacker, damage, damagetype, weapon, damageForce, damagePosition);
+				SDKHooks_TakeDamage(attacker, inflictor, vicatk, damage, damagetype, weapon, damageForce, damagePosition);
 			}
 			//no damage for victim
 			return Plugin_Handled;
