@@ -56,3 +56,7 @@ reverseff_bot [default: 0]
 
 20-Jan-2021 v1.7
 - Option to treat friendly-fire as self-damage. [reverseff_self (default: false)]
+
+20-Jan-2021 v1.7.1
+- Increase max possible value for reverseff_maxdamage from 999 to 999999.
+- Add option to kick instead of ban (by setting reverseff_banduration = -1).
