@@ -29,7 +29,7 @@ Create a pull request using this GitHub repository: https://github.com/Mystik-Sp
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.7"
+#define PLUGIN_VERSION "1.7.1"
 #define CVAR_FLAGS FCVAR_NOTIFY
 
 ConVar cvar_reverseff_enabled;
@@ -78,8 +78,8 @@ public void OnPluginStart()
 	cvar_reverseff_immunity = CreateConVar("reverseff_immunity", "1", "Admin immune to reversing FF", CVAR_FLAGS, true, 0.0, true, 1.0);
 	cvar_reverseff_multiplier = CreateConVar("reverseff_multiplier", "1.125", "Special ammo damage multiplier", CVAR_FLAGS, true, 1.0, true, 2.0);
 	cvar_reverseff_bot = CreateConVar("reverseff_bot", "0", "Reverse FF if victim is bot", CVAR_FLAGS, true, 0.0, true, 1.0);
-	cvar_reverseff_maxdamage = CreateConVar("reverseff_maxdamage", "180", "Maximum damage allowed before kicking", CVAR_FLAGS, true, 0.0, true, 999.0);
-	cvar_reverseff_banduration = CreateConVar("reverseff_banduration", "10", "Ban duration in minutes (0=permanent)", CVAR_FLAGS, true, 0.0, false);
+	cvar_reverseff_maxdamage = CreateConVar("reverseff_maxdamage", "180", "Maximum damage allowed before kicking", CVAR_FLAGS, true, 0.0, true, 999999.0);
+	cvar_reverseff_banduration = CreateConVar("reverseff_banduration", "10", "Ban duration in minutes (0=permanent, -1=kick)", CVAR_FLAGS, true, -1.0, false);
 	cvar_reverseff_incapped = CreateConVar("reverseff_incapped", "0", "Reverse FF if victim is incapped", CVAR_FLAGS, true, 0.0, true, 1.0);
 	cvar_reverseff_self = CreateConVar("reverseff_self", "0", "Treat FF as self damage", CVAR_FLAGS, true, 0.0, true, 1.0);
 	AutoExecConfig(true, "l4d_reverse_ff");
@@ -160,11 +160,19 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 				//does accumulated damage exceed "reverseff_maxdamage"
 				if (g_fAccumDamage[attacker] > g_fMaxAlwdDamage)
 				{
-					//ban attacker for "reverseff_banduration"
-					BanClient(attacker, g_iBanDuration, BANFLAG_AUTO, "ExcessiveFF", "Excessive Friendly-Fire", _, attacker);
+					if (g_iBanDuration == -1)
+					{
+						//kick attacker
+						KickClient(attacker, "Excessive Friendly-Fire");
+					}
+					else
+					{
+						//ban attacker for "reverseff_banduration"
+						BanClient(attacker, g_iBanDuration, BANFLAG_AUTO, "ExcessiveFF", "Excessive Friendly-Fire", _, attacker);
+					}
 					//reset accumulated damage
 					g_fAccumDamage[attacker] = 0.0;
-					//do not inflict damage since player was banned
+					//do not inflict damage since player was kicked/banned
 					return Plugin_Handled;
 				}
 				//check whether to treat FF as self-damage
