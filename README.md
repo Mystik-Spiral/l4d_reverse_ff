@@ -9,11 +9,13 @@ This plugin reverses damage from the grenade launcher, but does not otherwise re
 This plugin does not reverse molotov/gascan damage and I do not intend to add it, though I may make a separate plugin to handle molotov/gascan damage.
 
 - Option to specify extra damage if attacker is using explosive/incendiary ammo. [reverseff_multiplier (default: 1.125 {12.5%})]
-- Option to not reverse friendly-fire when attacker is an admin. [reverseff_immunity (default: true)]
+- Option to give admin attacker immunity from reverse friendly-fire. [reverseff_immunity (default: true)]
 - Option to reverse friendly-fire when victim is a bot. [reverseff_bot (default: false)]
-- Option to specify maximum damage allowed per chapter before ban. [reverseff_maxdamage (default: 180)]
-- Option to specify ban duration in minutes. [reverseff_banduration (default: 10)]
 - Option to reverse friendly-fire when victim is incapacitated. [reverseff_incapped (default: false)]
-- Option to treat friendly-fire as self-damage. [reverseff_self (default: false)]
+- Option to specify maximum survivor damage allowed per chapter before kick/ban. [reverseff_survivormaxdmg (default: 180)]
+- Option to specify maximum infected damage allowed per chapter before kick/ban. [reverseff_infectedmaxdmg (default: 110)]
+- Option to specify kick/ban duration in minutes (0=permanent, -1=kick). [reverseff_banduration (default: 10)]
+- Option to treat friendly-fire as self-damage (or reverse accusations). [reverseff_self (default: false)]
+- Now reverses "friendly-fire" for infected team too.
 
 Plugin discussion: https://forums.alliedmods.net/showthread.php?t=329035
