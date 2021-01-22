@@ -17,6 +17,7 @@ This plugin reverses damage from the grenade launcher, but does not otherwise re
     Option to specify maximum survivor damage allowed per chapter before ban. [reverseff_survivormaxdmg (default: 180)]
     Option to specify maximum infected damage allowed per chapter before ban. [reverseff_infectedmaxdmg (default: 110)]
     Option to specify ban duration in minutes. [reverseff_banduration (default: 10)]
+    Now reverses "friendly-fire" for infected team too.
 
 Want to contribute code enhancements?
 Create a pull request using this GitHub repository: https://github.com/Mystik-Spiral/l4d_reverse_ff
