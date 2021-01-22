@@ -7,17 +7,16 @@ This forces players to be more precise with their shots... or they will spend a 
 
 Although this plugin discourages griefers/team killers since they can only damage themselves and no one else, the first objective is to force players to improve their shooting tatics and aim. The second objective is to encourage new/inexperienced players to only join games with a difficulty that match their skillset, rather than trying to play at a difficulty above their ability and constantly incapping their teammates.
 
-This plugin reverses damage from the grenade launcher, but does not otherwise reverse explosion damage. This plugin does not reverse molotov/gascan damage and I do not intend to add it, though I may make a separate plugin to handle molotov/gascan damage.
+This plugin reverses damage from the grenade launcher, but does not otherwise reverse explosion damage. This plugin does not reverse molotov/gascan damage and I do not intend to add it, though I may make a separate plugin to handle molotov/gascan damage. Now reverses "friendly-fire" for infected team too.
 
-    Option to specify extra damage if attacker is using explosive/incendiary ammo. [reverseff_multiplier (default: 1.125 {12.5%})]
-    Option to make admin attacker immune to friendly-fire. [reverseff_immunity (default: true)]
-    Option to reverse friendly-fire when victim is a bot. [reverseff_bot (default: false)]
-    Option to reverse friendly-fire when victim is incapacitated. [reverseff_incapped (default: false)]
-    Option to treat friendly-fire as self damage (or reversed accusations). [reverseff_self (default: false)]
-    Option to specify maximum survivor damage allowed per chapter before ban. [reverseff_survivormaxdmg (default: 180)]
-    Option to specify maximum infected damage allowed per chapter before ban. [reverseff_infectedmaxdmg (default: 110)]
-    Option to specify ban duration in minutes. [reverseff_banduration (default: 10)]
-    Now reverses "friendly-fire" for infected team too.
+- Option to specify extra damage if attacker is using explosive/incendiary ammo. [reverseff_multiplier (default: 1.125 {12.5%})]
+- Option to make admin attacker immune to friendly-fire. [reverseff_immunity (default: true)]
+- Option to reverse friendly-fire when victim is a bot. [reverseff_bot (default: false)]
+- Option to reverse friendly-fire when victim is incapacitated. [reverseff_incapped (default: false)]
+- Option to treat friendly-fire as self damage (or reversed accusations). [reverseff_self (default: false)]
+- Option to specify maximum survivor damage allowed per chapter before ban. [reverseff_survivormaxdmg (default: 180)]
+- Option to specify maximum infected damage allowed per chapter before ban. [reverseff_infectedmaxdmg (default: 110)]
+- Option to specify ban duration in minutes. [reverseff_banduration (default: 10)]
 
 Want to contribute code enhancements?
 Create a pull request using this GitHub repository: https://github.com/Mystik-Spiral/l4d_reverse_ff
