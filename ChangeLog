@@ -1,69 +1,73 @@
-05-Dec-2020 v1.0
-- Initial release.
+21-Jan-2021 v1.8
+- Now reverses "friendly-fire" for infected team too.
 
-08-Dec-2020 v1.1
-- If attacker used incendiary/explosive ammo, increase damage to attacker by 12.5%.
+- New ConVar for infected maximum damage per chapter before kick/ban. [reverseff_infectedmaxdmg (default: 110)]
+
+- Renamed ConVar "reverseff_maxdamage" to indicate it is for survivors. [reverseff_survivormaxdmg (default: 180)]
+
+20-Jan-2021 v1.7.1
+- Increase max possible value for "reverseff_maxdamage" from "999" to "999999".
+
+- Add option to kick instead of ban using "reverseff_banduration".
+· "0" = permanent ban
+· "-1" = kick instead of ban
+
+20-Jan-2021 v1.7
+- Option to treat friendly-fire as self-damage (or vocalize accusations). [reverseff_self (default: false)]
+· false (0) = the attacker will vocally accuse the victim
+· true (1) = will only vocalize pain sounds without accusations
+
+11-Jan-2021 v1.6
+- Option to reverse friendly-fire when victim is incapacitated. [reverseff_incapped (default: false)]
+· false (0) = do not reverse friendly-fire if victim is shot while incapped
+· true (1) = reverse friendly-fire if victim is shot while incapped
+
+04-Jan-2021 v1.5
+- Now reverses friendly-fire for mounted guns (mini-guns) too.
+
+21-Dec-2020 v1.4.1
+- Minor change to "reverseff_version" ConVar flag. (added FCVAR_NOTIFY for server queries)
+
+21-Dec-2020 v1.4
+- Option to specify maximum damage allowed per chapter before ban. [reverseff_maxdamage (default: 180)]
+· Reset if player is kicked/banned
+· Reset when player spawns into map (OnClientPutInServer)
+
+- Option to specify ban duration in minutes when "reverseff_maxdamage" is exceeded [reverseff_banduration (default: 10)]
+· 0 = permanent ban
+
+13-Dec-2020 v1.3
+- Added dynamically changeable ConVar. [reverseff_bot (default: 0)]
+· false (0) = attacker does not have friendly-fire reversed when victim is a bot
+· true (1) = reverse friendly-fire against all victims, human and bot
+· Note that the victim (bot) does not take damage with either setting.
+
+- Added detection for grenade launcher special ammo.
 
 09-Dec-2020 v1.2
 - Added dynamically changeable ConVars:
 
 [reverseff_enabled (default: 1)]
-· 1 enable plugin
-· 0 disable plugin
+· true (1) = enable plugin
+· false (0) = disable plugin
 
 [reverseff_immunity (default: 1)]
-· 1 admins are immune to reverse friendly-fire damage
-· 0 admins are not immune to reverse friendly-fire damage
+- Determine whether admins are immune to reverse friendly-fire.
+· true (1) = admins are immune to reverse friendly-fire damage
+· false (0) = admins are not immune to reverse friendly-fire damage
 · Note that the victim does not take damage with either setting.
 
 [reverseff_multiplier (default: 1.125)]
-· increase damage by this multiplier if explosive/incendiary ammo
-· 1.0 normal, no extra damage
-· 1.5 50% extra damage
-· 2.0 100% extra damage (double damage)
+- Increase damage by this multiplier if explosive/incendiary ammo was used.
+· "1.0" = normal, no extra damage
+· "1.5" = 50% extra damage
+· "2.0" = 100% extra damage (double damage)
 · The default value of 1.125 results in 12.5% extra damage.
 
-- Also added a standard ConVar:
+- Also added a standard ConVar [reverseff_version] that displays the plugin version.
 
-[reverseff_version]
-· shows the plugin version
+08-Dec-2020 v1.1
+- If attacker used incendiary/explosive ammo, increase damage to attacker by 12.5%.
 
-13-Dec-2020 v1.3
-- Added dynamically changeable ConVar:
-
-[reverseff_bot (default: 0)]
-· 0 attacker does not have friendly-fire reversed when victim is a bot
-· 1 to reverse friendly-fire against all victims, human and bot
-· Note that the victim (bot) does not take damage with either setting.
-
-- Added detection for grenade launcher special ammo.
-
-21-Dec-2020 v1.4
-- Option to specify maximum damage allowed per chapter before ban. [reverseff_maxdamage (default: 180)]
-· 0 permanent ban
-· !0 minutes to ban
-
-- Option to specify ban duration in minutes when "reverseff_maxdamage" is exceeded. [reverseff_banduration (default: 10)]
-
-21-Dec-2020 v1.4.1
-- Minor change to "reverseff_version" ConVar flag.
-
-04-Jan-2021 v1.5
-- Now reverses friendly-fire for mounted machine guns too.
-
-11-Jan-2021 v1.6
-- Option to reverse friendly-fire when victim is incapacitated. [reverseff_incapped (default: false)]
-
-20-Jan-2021 v1.7
-- Option to treat friendly-fire as self-damage (or reverse accusations). [reverseff_self (default: false)]
-
-20-Jan-2021 v1.7.1
-- Increase max possible value for "reverseff_maxdamage" from 999 to 999999.
-- Add option to kick instead of ban using "reverseff_banduration".
-· 0 permanent ban
-· -1 kick instead of ban
-
-21-Jan-2021 v1.8
-- Now reverses "friendly-fire" for infected team too.
-- New ConVar [reverseff_infectedmaxdmg (default: 110)] for infected maximum damage per chapter before kick/ban.
-- Renamed ConVar "reverseff_maxdamage" to indicate it is for survivors. [reverseff_survivormaxdmg (default: 180)].
+05-Dec-2020 v1.0
+- Initial release.
