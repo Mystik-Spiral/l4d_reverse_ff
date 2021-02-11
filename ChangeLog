@@ -1,3 +1,16 @@
+11-Feb-2021 v1.9
+- Annouce ReverseFF when player joins.
+- Display ReverseFF chat message to attacker on friendly-fire.
+- Ensure brief immunity from ReverseFF after victim freed from SI (hunter pounce, jockey ride, charger pummel, smoker choke).
+- Cleaned-up cfg file descriptions for more clarity.
+- Changed "reverseff_immunity" ConVar to "reverseff_admin" and flipped its meaning (to match other similar options).
+- Enable/disable plugin by game mode with new ConVars: reverseff_modes_on, reverseff_modes_off, reverseff_modes_tog
+· By default, all game modes are enabled.
+· Examples of just a few of the many possible entries for game modes (includes default and custom mutations):
+· coop,realism,survival,versus,scavenge,mutation4,mutation12,nightmaredifficulty
+· For custom mutations, ensure your server already has the mutation installed and working correctly.
+· Thank you to Silvers (SilverShot) for the game mode change detection code.
+
 21-Jan-2021 v1.8
 - Now reverses "friendly-fire" for infected team too.
 
