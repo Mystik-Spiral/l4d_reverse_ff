@@ -7,16 +7,17 @@ This forces players to be more precise with their shots... or they will spend a 
 
 Although this plugin discourages griefers/team killers since they can only damage themselves and no one else, the first objective is to force players to improve their shooting tatics and aim. The second objective is to encourage new/inexperienced players to only join games with a difficulty that match their skillset, rather than trying to play at a difficulty above their ability and constantly incapping their teammates.
 
-This plugin reverses damage from the grenade launcher, but does not otherwise reverse explosion damage. This plugin does not reverse molotov/gascan damage and I do not intend to add it, though I may make a separate plugin to handle molotov/gascan damage. Now reverses "friendly-fire" for infected team too.
+This plugin reverses damage from the grenade launcher, but does not otherwise reverse explosion damage. This plugin does not reverse molotov/gascan damage and I do not intend to add it, though I may make a separate plugin to handle molotov/gascan damage.  Now reverses "friendly-fire for infected team too.
 
-- Option to specify extra damage if attacker is using explosive/incendiary ammo. [reverseff_multiplier (default: 1.125 {12.5%})]
-- Option to make admin attacker immune to friendly-fire. [reverseff_immunity (default: true)]
-- Option to reverse friendly-fire when victim is a bot. [reverseff_bot (default: false)]
-- Option to reverse friendly-fire when victim is incapacitated. [reverseff_incapped (default: false)]
-- Option to treat friendly-fire as self damage (or reversed accusations). [reverseff_self (default: false)]
-- Option to specify maximum survivor damage allowed per chapter before ban. [reverseff_survivormaxdmg (default: 180)]
-- Option to specify maximum infected damage allowed per chapter before ban. [reverseff_infectedmaxdmg (default: 110)]
-- Option to specify ban duration in minutes. [reverseff_banduration (default: 10)]
+    Option to specify extra damage if attacker is using explosive/incendiary ammo. [reverseff_multiplier (default: 1.125 {12.5%})]
+    Option to reverse friendly-fire when attacker is admin. [reverseff_admin (default: false)]
+    Option to reverse friendly-fire when victim is a bot. [reverseff_bot (default: false)]
+    Option to reverse friendly-fire when victim is incapacitated. [reverseff_incapped (default: false)]
+    Option to treat friendly-fire as self damage (or reversed accusations). [reverseff_self (default: false)]
+    Option to specify maximum survivor damage allowed per chapter before ban. [reverseff_survivormaxdmg (default: 180)]
+    Option to specify maximum infected damage allowed per chapter before ban. [reverseff_infectedmaxdmg (default: 110)]
+    Option to specify ban duration in minutes (0=permanent, -1=kick). [reverseff_banduration (default: 10)]
+    Option to enable/disable plugin by game mode. [reverseff_modes_on, reverseff_modes_off, reverseff_modes_tog (default: enabled for all game modes)]
 
 Want to contribute code enhancements?
 Create a pull request using this GitHub repository: https://github.com/Mystik-Spiral/l4d_reverse_ff
@@ -30,11 +31,10 @@ Create a pull request using this GitHub repository: https://github.com/Mystik-Sp
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.8"
+#define PLUGIN_VERSION "1.9"
 #define CVAR_FLAGS FCVAR_NOTIFY
 
-ConVar cvar_reverseff_enabled;
-ConVar cvar_reverseff_immunity;
+ConVar cvar_reverseff_admin;
 ConVar cvar_reverseff_multiplier;
 ConVar cvar_reverseff_bot;
 ConVar cvar_reverseff_survivormaxdmg;
@@ -42,17 +42,20 @@ ConVar cvar_reverseff_infectedmaxdmg;
 ConVar cvar_reverseff_banduration;
 ConVar cvar_reverseff_incapped;
 ConVar cvar_reverseff_self;
+ConVar g_hCvarAllow, g_hCvarMPGameMode, g_hCvarModesOn, g_hCvarModesOff, g_hCvarModesTog;
 
-bool g_bCvarRffPluginEnabled;
-bool g_bCvarAdminImmunity;
+bool g_bCvarReverseIfAdmin;
 float g_fCvarDamageMultiplier;
 bool g_bCvarReverseIfBot;
-float g_fAccumDamage[MAXPLAYERS+1];
+float g_fAccumDamage[MAXPLAYERS + 1];
 float g_fSurvivorMaxDamage;
 float g_fInfectedMaxDamage;
 int g_iBanDuration;
 bool g_bCvarReverseIfIncapped;
 bool g_bCvarSelfDamage;
+bool g_bGrace[MAXPLAYERS + 1];
+bool g_bToggle[MAXPLAYERS + 1];
+bool g_bCvarAllow, g_bMapStarted;
 
 public Plugin myinfo =
 {
@@ -77,21 +80,21 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 public void OnPluginStart()
 {
 	CreateConVar("reverseff_version", PLUGIN_VERSION, "Reverse Friendly-Fire", FCVAR_NOTIFY|FCVAR_DONTRECORD);
-	cvar_reverseff_enabled = CreateConVar("reverseff_enabled", "1", "Enable this plugin", CVAR_FLAGS, true, 0.0, true, 1.0);
-	cvar_reverseff_immunity = CreateConVar("reverseff_immunity", "1", "Admin immune to reversing FF", CVAR_FLAGS, true, 0.0, true, 1.0);
-	cvar_reverseff_bot = CreateConVar("reverseff_bot", "0", "Reverse FF if victim is bot", CVAR_FLAGS, true, 0.0, true, 1.0);
-	cvar_reverseff_incapped = CreateConVar("reverseff_incapped", "0", "Reverse FF if victim is incapped", CVAR_FLAGS, true, 0.0, true, 1.0);
-	cvar_reverseff_self = CreateConVar("reverseff_self", "0", "Treat FF as self damage", CVAR_FLAGS, true, 0.0, true, 1.0);
-	cvar_reverseff_multiplier = CreateConVar("reverseff_multiplier", "1.125", "Special ammo damage multiplier", CVAR_FLAGS, true, 1.0, true, 2.0);
-	cvar_reverseff_survivormaxdmg = CreateConVar("reverseff_survivormaxdmg", "180", "Maximum damage allowed before kicking survivor", CVAR_FLAGS, true, 0.0, true, 999999.0);
-	cvar_reverseff_infectedmaxdmg = CreateConVar("reverseff_infectedmaxdmg", "110", "Maximum damage allowed before kicking infected", CVAR_FLAGS, true, 0.0, true, 999999.0);
-	cvar_reverseff_banduration = CreateConVar("reverseff_banduration", "10", "Ban duration in minutes (0=permanent, -1=kick)", CVAR_FLAGS, true, -1.0, false);
+	cvar_reverseff_admin = CreateConVar("reverseff_admin", "0", "0=Do not ReverseFF if attacker is admin, 1=ReverseFF if attacker is admin", CVAR_FLAGS);
+	cvar_reverseff_bot = CreateConVar("reverseff_bot", "0", "0=Do not ReverseFF if victim is bot, 1=ReverseFF if victim is bot", CVAR_FLAGS);
+	cvar_reverseff_incapped = CreateConVar("reverseff_incapped", "0", "0=Do not ReverseFF if victim is incapped, 1=ReverseFF if victim is incapped", CVAR_FLAGS);
+	cvar_reverseff_self = CreateConVar("reverseff_self", "0", "0=Treat ReverseFF as reversed accusations, 1=Treat ReverseFF as self damage", CVAR_FLAGS);
+	cvar_reverseff_multiplier = CreateConVar("reverseff_multiplier", "1.125", "Special ammo damage multiplier (default=12.5%)", CVAR_FLAGS);
+	cvar_reverseff_survivormaxdmg = CreateConVar("reverseff_survivormaxdmg", "180", "Maximum damage allowed before kick/ban survivor", CVAR_FLAGS);
+	cvar_reverseff_infectedmaxdmg = CreateConVar("reverseff_infectedmaxdmg", "110", "Maximum damage allowed before kick/ban infected", CVAR_FLAGS);
+	cvar_reverseff_banduration = CreateConVar("reverseff_banduration", "10", "Ban duration in minutes (0=permanent, -1=kick)", CVAR_FLAGS);
+	g_hCvarAllow = CreateConVar("reverseff_enabled", "1", "0=Plugin off, 1=Plugin on.", CVAR_FLAGS );
+	g_hCvarModesOn = CreateConVar("reverseff_modes_on", "", "Game mode names on, comma separated, no spaces. (Empty=all).", CVAR_FLAGS );
+	g_hCvarModesOff = CreateConVar("reverseff_modes_off", "", "Game mode names off, comma separated, no spaces. (Empty=none).", CVAR_FLAGS );
+	g_hCvarModesTog = CreateConVar("reverseff_modes_tog", "0", "Game type bitflags on, add #s together. 0=All, 1=Coop, 2=Survival, 4=Versus, 8=Scavenge", CVAR_FLAGS );
 	AutoExecConfig(true, "l4d_reverse_ff");
 	
-	GetCvars();
-	
-	cvar_reverseff_enabled.AddChangeHook(action_ConVarChanged);
-	cvar_reverseff_immunity.AddChangeHook(action_ConVarChanged);
+	cvar_reverseff_admin.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_multiplier.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_bot.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_survivormaxdmg.AddChangeHook(action_ConVarChanged);
@@ -99,6 +102,37 @@ public void OnPluginStart()
 	cvar_reverseff_banduration.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_incapped.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_self.AddChangeHook(action_ConVarChanged);
+	g_hCvarMPGameMode = FindConVar("mp_gamemode");
+	g_hCvarMPGameMode.AddChangeHook(ConVarChanged_Allow);
+	g_hCvarAllow.AddChangeHook(ConVarChanged_Allow);
+	g_hCvarModesOn.AddChangeHook(ConVarChanged_Allow);
+	g_hCvarModesOff.AddChangeHook(ConVarChanged_Allow);
+	g_hCvarModesTog.AddChangeHook(ConVarChanged_Allow);
+	
+	HookEvent("choke_stopped", Event_StartGrace);
+	HookEvent("pounce_stopped", Event_StartGrace);
+	HookEvent("jockey_ride_end", Event_StartGrace);
+	HookEvent("charger_pummel_end", Event_StartGrace);
+}
+
+public void OnMapStart()
+{
+	g_bMapStarted = true;
+}
+
+public void OnMapEnd()
+{
+	g_bMapStarted = false;
+}
+
+public void OnConfigsExecuted()
+{
+	IsAllowed();
+}
+
+public void ConVarChanged_Allow(Handle convar, const char[] oldValue, const char[] newValue)
+{
+	IsAllowed();
 }
 
 public int action_ConVarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
@@ -108,8 +142,7 @@ public int action_ConVarChanged(ConVar convar, const char[] oldValue, const char
 
 void GetCvars()
 {
-	g_bCvarRffPluginEnabled = cvar_reverseff_enabled.BoolValue;
-	g_bCvarAdminImmunity = cvar_reverseff_immunity.BoolValue;
+	g_bCvarReverseIfAdmin = cvar_reverseff_admin.BoolValue;
 	g_fCvarDamageMultiplier = cvar_reverseff_multiplier.FloatValue;
 	g_bCvarReverseIfBot = cvar_reverseff_bot.BoolValue;
 	g_fSurvivorMaxDamage = cvar_reverseff_survivormaxdmg.FloatValue;
@@ -119,15 +152,117 @@ void GetCvars()
 	g_bCvarSelfDamage = cvar_reverseff_self.BoolValue;
 }
 
+void IsAllowed()
+{
+	bool bCvarAllow = g_hCvarAllow.BoolValue;
+	bool bAllowMode = IsAllowedGameMode();
+	GetCvars();
+
+	if( g_bCvarAllow == false && bCvarAllow == true && bAllowMode == true )
+	{
+		g_bCvarAllow = true;
+	}
+
+	else if( g_bCvarAllow == true && (bCvarAllow == false || bAllowMode == false) )
+	{
+		g_bCvarAllow = false;
+	}
+}
+
+int g_iCurrentMode;
+bool IsAllowedGameMode()
+{
+	if( g_hCvarMPGameMode == null )
+		return false;
+
+	int iCvarModesTog = g_hCvarModesTog.IntValue;
+	if( iCvarModesTog != 0 && iCvarModesTog != 15 )
+	{
+		if( g_bMapStarted == false )
+			return false;
+
+		g_iCurrentMode = 0;
+
+		int entity = CreateEntityByName("info_gamemode");
+		if( IsValidEntity(entity) )
+		{
+			DispatchSpawn(entity);
+			HookSingleEntityOutput(entity, "OnCoop", OnGamemode, true);
+			HookSingleEntityOutput(entity, "OnSurvival", OnGamemode, true);
+			HookSingleEntityOutput(entity, "OnVersus", OnGamemode, true);
+			HookSingleEntityOutput(entity, "OnScavenge", OnGamemode, true);
+			ActivateEntity(entity);
+			AcceptEntityInput(entity, "PostSpawnActivate");
+			if( IsValidEntity(entity) ) // Because sometimes "PostSpawnActivate" seems to kill the ent.
+				RemoveEdict(entity); // Because multiple plugins creating at once, avoid too many duplicate ents in the same frame
+		}
+
+		if( g_iCurrentMode == 0 )
+			return false;
+
+		if( !(iCvarModesTog & g_iCurrentMode) )
+			return false;
+	}
+
+	char sGameModes[64], sGameMode[64];
+	g_hCvarMPGameMode.GetString(sGameMode, sizeof(sGameMode));
+	Format(sGameMode, sizeof(sGameMode), ",%s,", sGameMode);
+
+	g_hCvarModesOn.GetString(sGameModes, sizeof(sGameModes));
+	if( sGameModes[0] )
+	{
+		Format(sGameModes, sizeof(sGameModes), ",%s,", sGameModes);
+		if( StrContains(sGameModes, sGameMode, false) == -1 )
+			return false;
+	}
+
+	g_hCvarModesOff.GetString(sGameModes, sizeof(sGameModes));
+	if( sGameModes[0] )
+	{
+		Format(sGameModes, sizeof(sGameModes), ",%s,", sGameModes);
+		if( StrContains(sGameModes, sGameMode, false) != -1 )
+			return false;
+	}
+
+	return true;
+}
+
+public void OnGamemode(const char[] output, int caller, int activator, float delay)
+{
+	if( strcmp(output, "OnCoop") == 0 )
+		g_iCurrentMode = 1;
+	else if( strcmp(output, "OnSurvival") == 0 )
+		g_iCurrentMode = 2;
+	else if( strcmp(output, "OnVersus") == 0 )
+		g_iCurrentMode = 4;
+	else if( strcmp(output, "OnScavenge") == 0 )
+		g_iCurrentMode = 8;
+}
+
 public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_OnTakeDamage, OnTakeDamage);
+	g_bGrace[client] = false;
+	g_fAccumDamage[client] = 0.0;
+}
+
+public void OnClientPostAdminCheck(int client)
+{
+	CreateTimer(16.0, RFFNotice, client);
+}
+
+public void OnClientDisconnect(int client)
+{
+	SDKUnhook(client, SDKHook_OnTakeDamage, OnTakeDamage);
+	g_bGrace[client] = false;
 	g_fAccumDamage[client] = 0.0;
 }
 
 public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3])
 {
-	if (!g_bCvarRffPluginEnabled)
+	//debug plugin enabled flag
+	//PrintToServer("g_bCvarAllow: %b", g_bCvarAllow);
+	if (!g_bCvarAllow)
 	{
 		return Plugin_Continue;
 	}
@@ -150,8 +285,8 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 		//if weapon caused damage
 		if (weapon > 0 || bWeaponGL || bWeaponMG)
 		{
-			//do not reverse friendly-fire for these three situations
-			if (!((IsClientAdmin(attacker) && g_bCvarAdminImmunity == true) || (IsFakeClient(victim) && g_bCvarReverseIfBot == false) || (IsClientIncapped(victim) && g_bCvarReverseIfIncapped == false)))
+			//do not reverse friendly-fire for these situations (attacker is admin, victim is bot, victim is incapped, victim in grace period)
+			if (!((IsClientAdmin(attacker) && !g_bCvarReverseIfAdmin) || (IsFakeClient(victim) && !g_bCvarReverseIfBot) || (IsClientIncapped(victim) && !g_bCvarReverseIfIncapped)) && (!g_bGrace[victim]))
 			{
 				//special ammo checks
 				if (IsSpecialAmmo(weapon, attacker, inflictor, damagetype, bWeaponGL))
@@ -189,6 +324,16 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 				}
 				//inflict damage to attacker
 				SDKHooks_TakeDamage(attacker, inflictor, vicatk, damage, damagetype, weapon, damageForce, damagePosition);
+				if (damage > 0 && !IsFakeClient(attacker))
+				{
+					if (!g_bToggle[attacker])
+					{
+						PrintToServer("%N attacked %N", attacker, victim);
+						PrintToChat(attacker, "[RFF] You attacked %N, friendly-fire damage reversed.", victim);
+						g_bToggle[attacker] = true;
+						CreateTimer(0.15, FlipToggle, attacker);
+					}
+				}
 			}
 			//no damage for victim
 			return Plugin_Handled;
@@ -200,7 +345,7 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 		if (IsValidClientAndInGameAndInfected(attacker) && IsValidClientAndInGameAndInfected(victim) && victim != attacker)
 		{
 			//do not reverse friendly-fire for these two situations
-			if (!((IsClientAdmin(attacker) && g_bCvarAdminImmunity == true) || (IsFakeClient(victim) && g_bCvarReverseIfBot == false)))
+			if (!((IsClientAdmin(attacker) && !g_bCvarReverseIfAdmin) || (IsFakeClient(victim) && !g_bCvarReverseIfBot)))
 			{
 				//accumulate damage total for infected attacker
 				g_fAccumDamage[attacker] += damage;
@@ -226,6 +371,8 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 				}
 				//inflict damage to attacker
 				SDKHooks_TakeDamage(attacker, inflictor, victim, damage, damagetype, weapon, damageForce, damagePosition);
+				PrintToServer("%N attacked %N", attacker, victim);
+				PrintToChat(attacker, "[RFF] You attacked %N, team attack damage was reversed.", victim);
 			}
 			//no damage for victim
 			return Plugin_Handled;
@@ -275,8 +422,41 @@ stock bool IsValidClientAndInGameAndInfected(int client)
 {
     return (client > 0 && client <= MaxClients && IsClientInGame(client) && GetClientTeam(client) == 3);
 }
+
 stock bool IsClientIncapped(int client)
 {
 	//convert integer to boolean for return value
 	return !!GetEntProp(client, Prop_Send, "m_isIncapacitated", 1);
+}
+
+public Action RFFNotice(Handle timer, int client)
+{
+	if (IsClientInGame(client) && g_bCvarAllow)
+	{
+		PrintToChat(client, "[RFF] NOTICE: This server reverses friendly-fire damage!");
+	}
+}
+
+public Action Event_StartGrace (Event event, const char[] name, bool dontBroadcast)
+{
+	int client = GetClientOfUserId(event.GetInt("victim"));
+	g_bGrace[client] = true;
+	//debug grace period
+	//PrintToServer("Start grace period for %i %N", client, client);
+	CreateTimer(2.5, EndGrace, client);
+}
+
+public Action EndGrace (Handle timer, int client)
+{
+	if (IsClientInGame(client))
+	{
+		g_bGrace[client] = false;
+		//debug grace period
+		//PrintToServer("End grace period for %i %N", client, client);
+	}
+}
+
+public Action FlipToggle(Handle timer, int attacker)
+{
+  g_bToggle[attacker] = false;
 }
