@@ -19,6 +19,7 @@ Reverses friendly-fire for survivors and team attacks for infected.
 - Option to treat ReverseFF as self-damage. (or reverse accusations). [reverseff_self (default: false)]
 - Option to enable/disable plugin by game mode. [reverseff_modes_on, reverseff_modes_off, reverseff_modes_tog]
 
-Plugin discussion: https://forums.alliedmods.net/showthread.php?t=329035
+Want to contribute code enhancements?
+Create a pull request using this GitHub repository: https://github.com/Mystik-Spiral/l4d_reverse_ff
 
-GitHub repository: https://github.com/Mystik-Spiral/l4d_reverse_ff
+Plugin discussion: https://forums.alliedmods.net/showthread.php?t=329035
