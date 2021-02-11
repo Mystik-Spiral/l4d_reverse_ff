@@ -17,7 +17,7 @@ Reverses friendly-fire for survivors and team attacks for infected.
 - Option to specify maximum infected damage allowed per chapter before kick/ban. [reverseff_infectedmaxdmg (default: 110)]
 - Option to specify kick/ban duration in minutes. (0=permanent, -1=kick). [reverseff_banduration (default: 10)]
 - Option to treat ReverseFF as self-damage. (or reverse accusations). [reverseff_self (default: false)]
-- Option to enable/disable plugin by game mode. [reverseff_modes_on, reverseff_modes_off, reverseff_modes_tog (default: enabled for all game modes)]
+- Option to enable/disable plugin by game mode. [reverseff_modes_on, reverseff_modes_off, reverseff_modes_tog]
 
 Plugin discussion: https://forums.alliedmods.net/showthread.php?t=329035
 
