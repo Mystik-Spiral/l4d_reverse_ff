@@ -20,4 +20,5 @@ Reverses friendly-fire for survivors and team attacks for infected.
 - Option to enable/disable plugin by game mode. [reverseff_modes_on, reverseff_modes_off, reverseff_modes_tog (default: enabled for all game modes)]
 
 Plugin discussion: https://forums.alliedmods.net/showthread.php?t=329035
+
 GitHub repository: https://github.com/Mystik-Spiral/l4d_reverse_ff
