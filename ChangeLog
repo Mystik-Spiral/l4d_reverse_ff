@@ -1,3 +1,9 @@
+12-Feb-2021 v2.0
+- Support for language translations, using new file "l4d_reverse_ff_phrases.txt".
+· The translation file must be copied to the <left4dead2>\addons\sourcemod\translations directory.
+· Includes translations for English and French, but "Mon Français est vraiment mauvais, désolé".
+· If you have a better French translation, or any other language, please create a GitHub pull request.
+
 11-Feb-2021 v1.9
 - Annouce ReverseFF when player joins.
 - Display ReverseFF chat message to attacker on friendly-fire.
