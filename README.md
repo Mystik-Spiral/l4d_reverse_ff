@@ -7,6 +7,7 @@ Although this plugin discourages griefers/team killers since they can only damag
 This plugin reverses damage from the grenade launcher, but does not otherwise reverse explosion damage.  
 This plugin does not reverse molotov/gascan damage (I plan to make a separate plugin to handle that).  
 Reverses friendly-fire for survivors and team attacks for infected.  
+Supports language translations using "l4d_reverse_ff_phrases.txt" file.  
 
 - Option to ReverseFF if attacker is admin. [reverseff_admin (default: false)]
 - Option to ReverseFF when victim is a bot. [reverseff_bot (default: false)]
