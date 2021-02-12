@@ -1,8 +1,10 @@
 #### Reverse Friendly-Fire (l4d_reverse_ff) by Mystik Spiral
 
-This Left4Dead2 SourceMod plugin reverses friendly-fire... the attacker takes all of the damage and the victim takes none. This forces players to be more precise with their shots or they will spend a lot of time on the ground.
+This Left4Dead2 SourceMod plugin reverses friendly-fire... the attacker takes all of the damage and the victim takes none.  
+This forces players to be more precise with their shots or they will spend a lot of time on the ground.
 
-Although this plugin discourages griefers/team killers since they can only damage themselves and no one else, the first objective is to force players to improve their shooting tactics and aim. The second objective is to encourage new/inexperienced players to only join games with a difficulty that match their skillset, rather than trying to play at a difficulty above their ability and constantly incapping their teammates.
+Although this plugin discourages griefers/team killers since they can only damage themselves and no one else, the first objective is to force players to improve their shooting tactics and aim.  
+The second objective is to encourage new/inexperienced players to only join games with a difficulty that match their skillset, rather than trying to play at a difficulty above their ability and constantly incapping their teammates.
 
 This plugin reverses damage from the grenade launcher, but does not otherwise reverse explosion damage.  
 This plugin does not reverse molotov/gascan damage (I plan to make a separate plugin to handle that).  
