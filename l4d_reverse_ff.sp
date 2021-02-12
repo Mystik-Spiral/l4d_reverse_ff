@@ -113,6 +113,8 @@ public void OnPluginStart()
 	HookEvent("pounce_stopped", Event_StartGrace);
 	HookEvent("jockey_ride_end", Event_StartGrace);
 	HookEvent("charger_pummel_end", Event_StartGrace);
+	
+	LoadTranslations("l4d_reverse_ff_phrases.txt");
 }
 
 public void OnMapStart()
@@ -304,12 +306,14 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 					if (g_iBanDuration == -1)
 					{
 						//kick attacker
-						KickClient(attacker, "Excessive Friendly-Fire");
+						KickClient(attacker, "%t", "ExcessiveFF");
 					}
 					else
 					{
 						//ban attacker for "reverseff_banduration"
-						BanClient(attacker, g_iBanDuration, BANFLAG_AUTO, "ExcessiveFF", "Excessive Friendly-Fire", _, attacker);
+						char BanMsg[50];
+						Format(BanMsg, sizeof(BanMsg), "%t", "ExcessiveFF", attacker);
+						BanClient(attacker, g_iBanDuration, BANFLAG_AUTO, "ExcessiveFF", BanMsg, _, attacker);
 					}
 					//reset accumulated damage
 					g_fAccumDamage[attacker] = 0.0;
@@ -328,8 +332,8 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 				{
 					if (!g_bToggle[attacker])
 					{
-						PrintToServer("%N attacked %N", attacker, victim);
-						PrintToChat(attacker, "[RFF] You attacked %N, friendly-fire damage reversed.", victim);
+						PrintToServer("%N %t %N", attacker, "Attacked", victim);
+						PrintToChat(attacker, "[RFF] %t %N, %t.", "YouAttacked", victim, "SurvivorFF");
 						g_bToggle[attacker] = true;
 						CreateTimer(0.15, FlipToggle, attacker);
 					}
@@ -357,12 +361,14 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 					if (g_iBanDuration == -1)
 					{
 						//kick attacker
-						KickClient(attacker, "Excessive Team Attacks");
+						KickClient(attacker, "%t", "ExcessiveTA");
 					}
 					else
 					{
 						//ban attacker for "reverseff_banduration"
-						BanClient(attacker, g_iBanDuration, BANFLAG_AUTO, "ExcessiveFF", "Excessive Team Attacks", _, attacker);
+						char BanMsg[50];
+						Format(BanMsg, sizeof(BanMsg), "%t", "ExcessiveTA", attacker);
+						BanClient(attacker, g_iBanDuration, BANFLAG_AUTO, "ExcessiveTA", BanMsg, _, attacker);
 					}
 					//reset accumulated damage
 					g_fAccumDamage[attacker] = 0.0;
@@ -371,8 +377,8 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 				}
 				//inflict damage to attacker
 				SDKHooks_TakeDamage(attacker, inflictor, victim, damage, damagetype, weapon, damageForce, damagePosition);
-				PrintToServer("%N attacked %N", attacker, victim);
-				PrintToChat(attacker, "[RFF] You attacked %N, team attack damage was reversed.", victim);
+				PrintToServer("%N %t %N", attacker, "Attacked", victim);
+				PrintToChat(attacker, "[RFF] %t %N, %t.", "YouAttacked", victim, "InfectedFF");
 			}
 			//no damage for victim
 			return Plugin_Handled;
@@ -433,7 +439,7 @@ public Action RFFNotice(Handle timer, int client)
 {
 	if (IsClientInGame(client) && g_bCvarAllow)
 	{
-		PrintToChat(client, "[RFF] NOTICE: This server reverses friendly-fire damage!");
+		PrintToChat(client, "[RFF] %t", "Announce");
 	}
 }
 
