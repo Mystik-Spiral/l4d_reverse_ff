@@ -4,9 +4,9 @@ This Left4Dead2 SourceMod plugin reverses friendly-fire... the attacker takes al
 
 Although this plugin discourages griefers/team killers since they can only damage themselves and no one else, the first objective is to force players to improve their shooting tactics and aim. The second objective is to encourage new/inexperienced players to only join games with a difficulty that match their skillset, rather than trying to play at a difficulty above their ability and constantly incapping their teammates.
 
-This plugin reverses damage from the grenade launcher, but does not otherwise reverse explosion damage.
-This plugin does not reverse molotov/gascan damage and I do not intend to add it, though I may make a separate plugin to handle molotov/gascan damage.
-Reverses friendly-fire for survivors and team attacks for infected.
+This plugin reverses damage from the grenade launcher, but does not otherwise reverse explosion damage.  
+This plugin does not reverse molotov/gascan damage and I do not intend to add it, though I may make a separate plugin to handle molotov/gascan damage.  
+Reverses friendly-fire for survivors and team attacks for infected.  
 
 - Option to ReverseFF if attacker is admin. [reverseff_admin (default: false)]
 - Option to ReverseFF when victim is a bot. [reverseff_bot (default: false)]
