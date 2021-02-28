@@ -1,0 +1,38 @@
+﻿"Phrases"
+{
+	"Announce"
+	{
+		"en" 	"NOTICE: This server reverses friendly-fire damage!"
+		"fr"	"AVIS: Ce serveur sens inverse les dégâts de tir ami!"
+	}
+	"YouAttacked"
+	{
+		"en"	"You attacked"
+		"fr"	"Vous avez attaqué"
+	}
+	"SurvivorFF"
+	{
+		"en"	"friendly-fire damage reversed"
+		"fr"	"les dégâts de tir ami sens inverse"
+	}
+	"InfectedFF"
+	{
+		"en"	"team attack damage reversed"
+		"fr"	"les dégâts d'attaque d'équipe sens inverse"
+	}
+	"Attacked"
+	{
+		"en"	"attacked"
+		"fr"	"a attaqué"
+	}
+	"ExcessiveFF"
+	{
+		"en"	"Excessive friendly-fire"
+		"fr"	"Tir ami excessif"
+	}
+	"ExcessiveTA"
+	{
+		"en"	"Excessive team attacks"
+		"fr"	"Attaques d'équipe excessif"
+	}
+}
