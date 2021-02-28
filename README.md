@@ -7,8 +7,7 @@ This forces players to be more precise with their shots or they will spend a lot
 
 Although this plugin discourages griefers/team killers since they can only damage themselves and no one else...
 
-- The first objective is to force players to improve their shooting tactics and aim.
-
+- The first objective is to force players to improve their shooting tactics and aim.  
 - The second objective is to encourage new/inexperienced players to only join games with a difficulty that match their skillset.
 
 This plugin reverses damage from the grenade launcher, but does not otherwise reverse explosion damage.  
