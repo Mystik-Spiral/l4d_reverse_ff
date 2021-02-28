@@ -1,5 +1,6 @@
 ### `Reverse Friendly-Fire`
-(l4d_reverse_ff) by *_Mystik Spiral_*
+(l4d_reverse_ff)
+### by *_Mystik Spiral_*
 
 This Left4Dead2 SourceMod plugin reverses friendly-fire... the attacker takes all of the damage and the victim takes none.  
 This forces players to be more precise with their shots or they will spend a lot of time on the ground.
