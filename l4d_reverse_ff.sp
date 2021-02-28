@@ -14,8 +14,9 @@ This plugin reverses damage from the grenade launcher, but does not otherwise re
     Option to reverse friendly-fire when victim is a bot. [reverseff_bot (default: false)]
     Option to reverse friendly-fire when victim is incapacitated. [reverseff_incapped (default: false)]
     Option to treat friendly-fire as self damage (or reversed accusations). [reverseff_self (default: false)]
-    Option to specify maximum survivor damage allowed per chapter before ban. [reverseff_survivormaxdmg (default: 180)]
-    Option to specify maximum infected damage allowed per chapter before ban. [reverseff_infectedmaxdmg (default: 110)]
+    Option to specify maximum survivor damage allowed per chapter before ban. [reverseff_survivormaxdmg (default: 200)]
+    Option to specify maximum infected damage allowed per chapter before ban. [reverseff_infectedmaxdmg (default: 50)]
+    Option to specify maximum tank damage allowed per chapter before ban. [reverseff_tankmaxdmg (default: 300)]
     Option to specify ban duration in minutes (0=permanent, -1=kick). [reverseff_banduration (default: 10)]
     Option to enable/disable plugin by game mode. [reverseff_modes_on, reverseff_modes_off, reverseff_modes_tog (default: enabled for all game modes)]
 
@@ -31,14 +32,16 @@ Create a pull request using this GitHub repository: https://github.com/Mystik-Sp
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.9"
+#define PLUGIN_VERSION "2.1"
 #define CVAR_FLAGS FCVAR_NOTIFY
+#define TRANSLATION_FILENAME "l4d_reverse_ff.phrases"
 
 ConVar cvar_reverseff_admin;
 ConVar cvar_reverseff_multiplier;
 ConVar cvar_reverseff_bot;
 ConVar cvar_reverseff_survivormaxdmg;
 ConVar cvar_reverseff_infectedmaxdmg;
+ConVar cvar_reverseff_tankmaxdmg;
 ConVar cvar_reverseff_banduration;
 ConVar cvar_reverseff_incapped;
 ConVar cvar_reverseff_self;
@@ -48,14 +51,18 @@ bool g_bCvarReverseIfAdmin;
 float g_fCvarDamageMultiplier;
 bool g_bCvarReverseIfBot;
 float g_fAccumDamage[MAXPLAYERS + 1];
+float g_fAccumDamageAsTank[MAXPLAYERS + 1];
+float g_fAccumDamageAsInfected[MAXPLAYERS + 1];
 float g_fSurvivorMaxDamage;
 float g_fInfectedMaxDamage;
+float g_fTankMaxDamage;
 int g_iBanDuration;
 bool g_bCvarReverseIfIncapped;
 bool g_bCvarSelfDamage;
 bool g_bGrace[MAXPLAYERS + 1];
 bool g_bToggle[MAXPLAYERS + 1];
 bool g_bCvarAllow, g_bMapStarted;
+bool g_bL4D2;
 
 public Plugin myinfo =
 {
@@ -69,8 +76,14 @@ public Plugin myinfo =
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	EngineVersion test = GetEngineVersion();
-	if ( test == Engine_Left4Dead2 || test == Engine_Left4Dead )
+	if (test == Engine_Left4Dead2)
 	{
+		g_bL4D2 = true;
+		return APLRes_Success;
+	}
+	if ( test == Engine_Left4Dead )
+	{
+		g_bL4D2 = false;
 		return APLRes_Success;
 	}
 	strcopy(error, err_max, "Plugin only supports Left 4 Dead 1 & 2.");
@@ -79,14 +92,17 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
+	LoadPluginTranslations();
+	
 	CreateConVar("reverseff_version", PLUGIN_VERSION, "Reverse Friendly-Fire", FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	cvar_reverseff_admin = CreateConVar("reverseff_admin", "0", "0=Do not ReverseFF if attacker is admin, 1=ReverseFF if attacker is admin", CVAR_FLAGS);
 	cvar_reverseff_bot = CreateConVar("reverseff_bot", "0", "0=Do not ReverseFF if victim is bot, 1=ReverseFF if victim is bot", CVAR_FLAGS);
 	cvar_reverseff_incapped = CreateConVar("reverseff_incapped", "0", "0=Do not ReverseFF if victim is incapped, 1=ReverseFF if victim is incapped", CVAR_FLAGS);
 	cvar_reverseff_self = CreateConVar("reverseff_self", "0", "0=Treat ReverseFF as reversed accusations, 1=Treat ReverseFF as self damage", CVAR_FLAGS);
 	cvar_reverseff_multiplier = CreateConVar("reverseff_multiplier", "1.125", "Special ammo damage multiplier (default=12.5%)", CVAR_FLAGS);
-	cvar_reverseff_survivormaxdmg = CreateConVar("reverseff_survivormaxdmg", "180", "Maximum damage allowed before kick/ban survivor", CVAR_FLAGS);
-	cvar_reverseff_infectedmaxdmg = CreateConVar("reverseff_infectedmaxdmg", "110", "Maximum damage allowed before kick/ban infected", CVAR_FLAGS);
+	cvar_reverseff_survivormaxdmg = CreateConVar("reverseff_survivormaxdmg", "200", "Maximum damage allowed before kick/ban survivor", CVAR_FLAGS);
+	cvar_reverseff_infectedmaxdmg = CreateConVar("reverseff_infectedmaxdmg", "50", "Maximum damage allowed before kick/ban infected", CVAR_FLAGS);
+	cvar_reverseff_tankmaxdmg = CreateConVar("reverseff_tankmaxdmg", "300", "Maximum damage allowed before kick/ban tank", CVAR_FLAGS);
 	cvar_reverseff_banduration = CreateConVar("reverseff_banduration", "10", "Ban duration in minutes (0=permanent, -1=kick)", CVAR_FLAGS);
 	g_hCvarAllow = CreateConVar("reverseff_enabled", "1", "0=Plugin off, 1=Plugin on.", CVAR_FLAGS );
 	g_hCvarModesOn = CreateConVar("reverseff_modes_on", "", "Game mode names on, comma separated, no spaces. (Empty=all).", CVAR_FLAGS );
@@ -99,6 +115,7 @@ public void OnPluginStart()
 	cvar_reverseff_bot.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_survivormaxdmg.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_infectedmaxdmg.AddChangeHook(action_ConVarChanged);
+	cvar_reverseff_tankmaxdmg.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_banduration.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_incapped.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_self.AddChangeHook(action_ConVarChanged);
@@ -111,10 +128,22 @@ public void OnPluginStart()
 	
 	HookEvent("choke_stopped", Event_StartGrace);
 	HookEvent("pounce_stopped", Event_StartGrace);
-	HookEvent("jockey_ride_end", Event_StartGrace);
-	HookEvent("charger_pummel_end", Event_StartGrace);
+	if (g_bL4D2)
+	{
+		HookEvent("jockey_ride_end", Event_StartGrace);
+		HookEvent("charger_pummel_end", Event_StartGrace);
+	}
 	
-	LoadTranslations("l4d_reverse_ff_phrases.txt");
+}
+
+public void LoadPluginTranslations()
+{
+    char path[PLATFORM_MAX_PATH];
+    BuildPath(Path_SM, path, PLATFORM_MAX_PATH, "translations/%s.txt", TRANSLATION_FILENAME);
+    if (FileExists(path))
+        LoadTranslations(TRANSLATION_FILENAME);
+    else
+        SetFailState("Missing required translation file \"translations/%s.txt\", please download.", TRANSLATION_FILENAME);
 }
 
 public void OnMapStart()
@@ -149,6 +178,7 @@ void GetCvars()
 	g_bCvarReverseIfBot = cvar_reverseff_bot.BoolValue;
 	g_fSurvivorMaxDamage = cvar_reverseff_survivormaxdmg.FloatValue;
 	g_fInfectedMaxDamage = cvar_reverseff_infectedmaxdmg.FloatValue;
+	g_fTankMaxDamage = cvar_reverseff_tankmaxdmg.FloatValue;
 	g_iBanDuration = cvar_reverseff_banduration.IntValue;
 	g_bCvarReverseIfIncapped = cvar_reverseff_incapped.BoolValue;
 	g_bCvarSelfDamage = cvar_reverseff_self.BoolValue;
@@ -246,6 +276,8 @@ public void OnClientPutInServer(int client)
 	SDKHook(client, SDKHook_OnTakeDamage, OnTakeDamage);
 	g_bGrace[client] = false;
 	g_fAccumDamage[client] = 0.0;
+	g_fAccumDamageAsTank[client] = 0.0;
+	g_fAccumDamageAsInfected[client] = 0.0;
 }
 
 public void OnClientPostAdminCheck(int client)
@@ -258,6 +290,8 @@ public void OnClientDisconnect(int client)
 	SDKUnhook(client, SDKHook_OnTakeDamage, OnTakeDamage);
 	g_bGrace[client] = false;
 	g_fAccumDamage[client] = 0.0;
+	g_fAccumDamageAsTank[client] = 0.0;
+	g_fAccumDamageAsInfected[client] = 0.0;
 }
 
 public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3])
@@ -301,7 +335,7 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 				//debug acculated damage
 				//PrintToServer("Survivor Atk: %N, Dmg: %f, AcmDmg: %f, SurvMaxDmg: %f", attacker, damage, g_fAccumDamage[attacker], g_fSurvivorMaxDamage);
 				//does accumulated damage exceed "reverseff_survivormaxdamage"
-				if (g_fAccumDamage[attacker] > g_fSurvivorMaxDamage)
+				if ((g_fAccumDamage[attacker] > g_fSurvivorMaxDamage) && !IsFakeClient(attacker))
 				{
 					if (g_iBanDuration == -1)
 					{
@@ -317,6 +351,8 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 					}
 					//reset accumulated damage
 					g_fAccumDamage[attacker] = 0.0;
+					g_fAccumDamageAsTank[attacker] = 0.0;
+					g_fAccumDamageAsInfected[attacker] = 0.0;
 					//do not inflict damage since player was kicked/banned
 					return Plugin_Handled;
 				}
@@ -351,12 +387,19 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 			//do not reverse friendly-fire for these two situations
 			if (!((IsClientAdmin(attacker) && !g_bCvarReverseIfAdmin) || (IsFakeClient(victim) && !g_bCvarReverseIfBot)))
 			{
-				//accumulate damage total for infected attacker
-				g_fAccumDamage[attacker] += damage;
+				//accumulate damage total for infected/tank attacker
+				if (IsTank(attacker))
+				{
+					g_fAccumDamageAsTank[attacker] += damage;
+				}
+				else
+				{
+					g_fAccumDamageAsInfected[attacker] += damage;
+				}
 				//debug acculated damage
-				//PrintToServer("Infected Atk: %N, Dmg: %f, AcmDmg: %f, InfdMaxDmg: %f", attacker, damage, g_fAccumDamage[attacker], g_fInfectedMaxDamage);
-				//does accumulated damage exceed "reverseff_infectedmaxdamage"
-				if (g_fAccumDamage[attacker] > g_fInfectedMaxDamage)
+				//PrintToServer("Infected Atk: %N, Dmg: %f, AcmDmgTank: %f, TankMaxDmg %f, AcmDmgInf: %f, InfMaxDmg: %f", attacker, damage, g_fAccumDamageAsTank[attacker], g_fTankMaxDamage, g_fAccumDamageAsInfected[attacker], g_fInfectedMaxDamage);
+				//does accumulated damage exceed "reverseff_tankmaxdamage" or "reverseff_infectedmaxdamage"
+				if (((IsTank(attacker) && g_fAccumDamageAsTank[attacker] > g_fTankMaxDamage) || (!IsTank(attacker) && g_fAccumDamageAsInfected[attacker] > g_fInfectedMaxDamage)) && !IsFakeClient(attacker))
 				{
 					if (g_iBanDuration == -1)
 					{
@@ -372,6 +415,8 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 					}
 					//reset accumulated damage
 					g_fAccumDamage[attacker] = 0.0;
+					g_fAccumDamageAsTank[attacker] = 0.0;
+					g_fAccumDamageAsInfected[attacker] = 0.0;
 					//do not inflict damage since player was kicked/banned
 					return Plugin_Handled;
 				}
@@ -465,4 +510,11 @@ public Action EndGrace (Handle timer, int client)
 public Action FlipToggle(Handle timer, int attacker)
 {
   g_bToggle[attacker] = false;
+}
+
+stock bool IsTank(int client)
+{
+	char sNetClass[32];
+	GetEntityNetClass(client, sNetClass, sizeof(sNetClass));
+	return (StrEqual(sNetClass, "Tank", false));
 }
