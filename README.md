@@ -15,9 +15,11 @@ It does not reverse molotov/gascan damage (I plan to make a separate plugin to h
 Reverses friendly-fire for survivors and team attacks for infected.  
 Supports language translations using "l4d_reverse_ff.phrases.txt" file.  
 
-- Option to ReverseFF if attacker is admin. [reverseff_admin (default: false)]
+- Option to ReverseFF when attacker is an admin. [reverseff_admin (default: false)]
 - Option to ReverseFF when victim is a bot. [reverseff_bot (default: false)]
 - Option to ReverseFF when victim is incapacitated. [reverseff_incapped (default: false)]
+- Option to ReverseFF when attacker is incapacitated.  [reverseff_attackerincapped (default: false)]
+- Option to ReverseFF when damage from mounted gun.  [reverseff_mountedgun (default: true)]
 - Option to specify extra damage if attacker used explosive/incendiary ammo. [reverseff_multiplier (default: 1.125 = 12.5%)]
 - Option to specify maximum survivor damage allowed per chapter before kick/ban. [reverseff_survivormaxdmg (default: 200)]
 - Option to specify maximum infected damage allowed per chapter before kick/ban. [reverseff_infectedmaxdmg (default: 50)]
