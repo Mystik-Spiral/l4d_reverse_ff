@@ -1,3 +1,7 @@
+05-Mar-2021 v2.2
+- Option to ReverseFF if attacker incapped (generally not needed except with "Incapped Weapons Patch" or similar), default is not to ReverseFF if attacker is incapped.
+- Option to ReverseFF if damage from mounted gun, default is to ReverseFF if damage is from mounted gun.
+
 27-Feb-2021 v2.1
 - New L4D2 check before hooking L4D2-only events.
 - New method to verify/load required translation file.
