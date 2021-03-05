@@ -13,6 +13,8 @@ This plugin reverses damage from the grenade launcher, but does not otherwise re
     Option to reverse friendly-fire when attacker is admin. [reverseff_admin (default: false)]
     Option to reverse friendly-fire when victim is a bot. [reverseff_bot (default: false)]
     Option to reverse friendly-fire when victim is incapacitated. [reverseff_incapped (default: false)]
+    Option to reverse friendly-fire when attacker is incapacitated. [reverseff_attackerincapped (default: false)]
+    Option to reverse friendly-fire when damage from mounted gun. [reverseff_mountedgun (default: true)]
     Option to treat friendly-fire as self damage (or reversed accusations). [reverseff_self (default: false)]
     Option to specify maximum survivor damage allowed per chapter before ban. [reverseff_survivormaxdmg (default: 200)]
     Option to specify maximum infected damage allowed per chapter before ban. [reverseff_infectedmaxdmg (default: 50)]
@@ -32,7 +34,7 @@ Create a pull request using this GitHub repository: https://github.com/Mystik-Sp
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "2.1"
+#define PLUGIN_VERSION "2.2"
 #define CVAR_FLAGS FCVAR_NOTIFY
 #define TRANSLATION_FILENAME "l4d_reverse_ff.phrases"
 
@@ -44,7 +46,9 @@ ConVar cvar_reverseff_infectedmaxdmg;
 ConVar cvar_reverseff_tankmaxdmg;
 ConVar cvar_reverseff_banduration;
 ConVar cvar_reverseff_incapped;
+ConVar cvar_reverseff_attackerincapped;
 ConVar cvar_reverseff_self;
+ConVar cvar_reverseff_mountedgun;
 ConVar g_hCvarAllow, g_hCvarMPGameMode, g_hCvarModesOn, g_hCvarModesOff, g_hCvarModesTog;
 
 bool g_bCvarReverseIfAdmin;
@@ -58,7 +62,9 @@ float g_fInfectedMaxDamage;
 float g_fTankMaxDamage;
 int g_iBanDuration;
 bool g_bCvarReverseIfIncapped;
+bool g_bCvarReverseIfAttackerIncapped;
 bool g_bCvarSelfDamage;
+bool g_bCvarReverseIfMountedgun;
 bool g_bGrace[MAXPLAYERS + 1];
 bool g_bToggle[MAXPLAYERS + 1];
 bool g_bCvarAllow, g_bMapStarted;
@@ -68,7 +74,7 @@ public Plugin myinfo =
 {
 	name = "[L4D & L4D2] Reverse Friendly-Fire",
 	author = "Mystic Spiral",
-	description = "Team attacker takes friendly-fire damage, victim takes no damage.",
+	description = "Reverses friendly-fire... attacker takes damage, victim does not.",
 	version = PLUGIN_VERSION,
 	url = "https://forums.alliedmods.net/showthread.php?p=2727641#post2727641"
 }
@@ -98,12 +104,14 @@ public void OnPluginStart()
 	cvar_reverseff_admin = CreateConVar("reverseff_admin", "0", "0=Do not ReverseFF if attacker is admin, 1=ReverseFF if attacker is admin", CVAR_FLAGS);
 	cvar_reverseff_bot = CreateConVar("reverseff_bot", "0", "0=Do not ReverseFF if victim is bot, 1=ReverseFF if victim is bot", CVAR_FLAGS);
 	cvar_reverseff_incapped = CreateConVar("reverseff_incapped", "0", "0=Do not ReverseFF if victim is incapped, 1=ReverseFF if victim is incapped", CVAR_FLAGS);
+	cvar_reverseff_attackerincapped = CreateConVar("reverseff_attackerincapped", "0", "0=Do not ReverseFF if attacker is incapped, 1=ReverseFF if attacker is incapped", CVAR_FLAGS);
 	cvar_reverseff_self = CreateConVar("reverseff_self", "0", "0=Treat ReverseFF as reversed accusations, 1=Treat ReverseFF as self damage", CVAR_FLAGS);
 	cvar_reverseff_multiplier = CreateConVar("reverseff_multiplier", "1.125", "Special ammo damage multiplier (default=12.5%)", CVAR_FLAGS);
 	cvar_reverseff_survivormaxdmg = CreateConVar("reverseff_survivormaxdmg", "200", "Maximum damage allowed before kick/ban survivor", CVAR_FLAGS);
 	cvar_reverseff_infectedmaxdmg = CreateConVar("reverseff_infectedmaxdmg", "50", "Maximum damage allowed before kick/ban infected", CVAR_FLAGS);
 	cvar_reverseff_tankmaxdmg = CreateConVar("reverseff_tankmaxdmg", "300", "Maximum damage allowed before kick/ban tank", CVAR_FLAGS);
 	cvar_reverseff_banduration = CreateConVar("reverseff_banduration", "10", "Ban duration in minutes (0=permanent, -1=kick)", CVAR_FLAGS);
+	cvar_reverseff_mountedgun = CreateConVar("reverseff_mountedgun", "1", "0=Do not ReverseFF from mountedgun, 1=ReverseFF from mountedgun", CVAR_FLAGS);
 	g_hCvarAllow = CreateConVar("reverseff_enabled", "1", "0=Plugin off, 1=Plugin on.", CVAR_FLAGS );
 	g_hCvarModesOn = CreateConVar("reverseff_modes_on", "", "Game mode names on, comma separated, no spaces. (Empty=all).", CVAR_FLAGS );
 	g_hCvarModesOff = CreateConVar("reverseff_modes_off", "", "Game mode names off, comma separated, no spaces. (Empty=none).", CVAR_FLAGS );
@@ -118,7 +126,9 @@ public void OnPluginStart()
 	cvar_reverseff_tankmaxdmg.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_banduration.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_incapped.AddChangeHook(action_ConVarChanged);
+	cvar_reverseff_attackerincapped.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_self.AddChangeHook(action_ConVarChanged);
+	cvar_reverseff_mountedgun.AddChangeHook(action_ConVarChanged);
 	g_hCvarMPGameMode = FindConVar("mp_gamemode");
 	g_hCvarMPGameMode.AddChangeHook(ConVarChanged_Allow);
 	g_hCvarAllow.AddChangeHook(ConVarChanged_Allow);
@@ -141,9 +151,21 @@ public void LoadPluginTranslations()
     char path[PLATFORM_MAX_PATH];
     BuildPath(Path_SM, path, PLATFORM_MAX_PATH, "translations/%s.txt", TRANSLATION_FILENAME);
     if (FileExists(path))
-        LoadTranslations(TRANSLATION_FILENAME);
+    {
+    	LoadTranslations(TRANSLATION_FILENAME);
+    }
     else
-        SetFailState("Missing required translation file \"translations/%s.txt\", please download.", TRANSLATION_FILENAME);
+    {
+    	if (g_bL4D2)
+    	{
+    		SetFailState("Missing required translation file \"<left4dead2>\\%s\", please download.", path, TRANSLATION_FILENAME);
+    	}
+    	else
+    	{
+    		SetFailState("Missing required translation file \"<left4dead>\\%s\", please download.", path, TRANSLATION_FILENAME);
+    	}
+    }
+        
 }
 
 public void OnMapStart()
@@ -181,7 +203,9 @@ void GetCvars()
 	g_fTankMaxDamage = cvar_reverseff_tankmaxdmg.FloatValue;
 	g_iBanDuration = cvar_reverseff_banduration.IntValue;
 	g_bCvarReverseIfIncapped = cvar_reverseff_incapped.BoolValue;
+	g_bCvarReverseIfAttackerIncapped = cvar_reverseff_attackerincapped.BoolValue;
 	g_bCvarSelfDamage = cvar_reverseff_self.BoolValue;
+	g_bCvarReverseIfMountedgun = cvar_reverseff_mountedgun.BoolValue;
 }
 
 void IsAllowed()
@@ -316,13 +340,19 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 		bool bWeaponGL = IsWeaponGrenadeLauncher(sInflictorClass);
 		//is weapon minigun
 		bool bWeaponMG = IsWeaponMinigun(sInflictorClass);
+		bool ReverseIfMountedgun = false;
+		if (bWeaponMG && !g_bCvarReverseIfMountedgun)
+		{
+			ReverseIfMountedgun = true;
+		}
 		//debug weapon
 		//PrintToServer("GL: %b, MG: %b, InfCls: %s, weapon: %i", bWeaponGL, bWeaponMG, sInflictorClass, weapon);
 		//if weapon caused damage
 		if (weapon > 0 || bWeaponGL || bWeaponMG)
 		{
-			//do not reverse friendly-fire for these situations (attacker is admin, victim is bot, victim is incapped, victim in grace period)
-			if (!((IsClientAdmin(attacker) && !g_bCvarReverseIfAdmin) || (IsFakeClient(victim) && !g_bCvarReverseIfBot) || (IsClientIncapped(victim) && !g_bCvarReverseIfIncapped)) && (!g_bGrace[victim]))
+			//check reverse friendly-fire parameters for: attacker=admin, victim=bot, victim=incapped, attacker=incapped, damage from mountedgun
+			//regardless of the above settings, do not reverse friendly-fire during grace period after victim freed from SI
+			if (!(ReverseIfAttackerAdmin(attacker) || ReverseIfVictimBot(victim) || ReverseIfVictimIncapped(victim) || ReverseIfAttackerIncapped(attacker) || ReverseIfMountedgun) && (!g_bGrace[victim]))
 			{
 				//special ammo checks
 				if (IsSpecialAmmo(weapon, attacker, inflictor, damagetype, bWeaponGL))
@@ -384,8 +414,8 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 		//attacker and victim infected checks
 		if (IsValidClientAndInGameAndInfected(attacker) && IsValidClientAndInGameAndInfected(victim) && victim != attacker)
 		{
-			//do not reverse friendly-fire for these two situations
-			if (!((IsClientAdmin(attacker) && !g_bCvarReverseIfAdmin) || (IsFakeClient(victim) && !g_bCvarReverseIfBot)))
+			//check reverse friendly-fire parameters for: attacker=admin, victim=bot
+			if (!(ReverseIfAttackerAdmin(attacker) || ReverseIfVictimBot(victim)))
 			{
 				//accumulate damage total for infected/tank attacker
 				if (IsTank(attacker))
@@ -517,4 +547,24 @@ stock bool IsTank(int client)
 	char sNetClass[32];
 	GetEntityNetClass(client, sNetClass, sizeof(sNetClass));
 	return (StrEqual(sNetClass, "Tank", false));
+}
+
+stock bool ReverseIfAttackerAdmin(int attacker)
+{
+	return (IsClientAdmin(attacker) && !g_bCvarReverseIfAdmin);
+}
+
+stock bool ReverseIfVictimBot (int victim)
+{
+	return (IsFakeClient(victim) && !g_bCvarReverseIfBot);
+}
+
+stock bool ReverseIfVictimIncapped (int victim)
+{
+	return (IsClientIncapped(victim) && !g_bCvarReverseIfIncapped);
+}
+
+stock bool ReverseIfAttackerIncapped (int attacker)
+{
+	return (IsClientIncapped(attacker) && !g_bCvarReverseIfAttackerIncapped);
 }
