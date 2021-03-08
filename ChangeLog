@@ -1,6 +1,6 @@
 08-Mar-2021 v2.3
 - Check for two ReverseBurn plugins, and if found, only do a single combined announcement for all of them.
-- Added colors to Annoucement message and to messages displayed to attacker when friendly-fire is reversed.
+- Added colors to Announcement message and to messages displayed to attacker when friendly-fire is reversed.
 - Changes above require new phrases download.
 
 05-Mar-2021 v2.2
