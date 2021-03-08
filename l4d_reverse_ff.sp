@@ -34,7 +34,7 @@ Create a pull request using this GitHub repository: https://github.com/Mystik-Sp
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "2.2"
+#define PLUGIN_VERSION "2.3"
 #define CVAR_FLAGS FCVAR_NOTIFY
 #define TRANSLATION_FILENAME "l4d_reverse_ff.phrases"
 
@@ -51,9 +51,7 @@ ConVar cvar_reverseff_self;
 ConVar cvar_reverseff_mountedgun;
 ConVar g_hCvarAllow, g_hCvarMPGameMode, g_hCvarModesOn, g_hCvarModesOff, g_hCvarModesTog;
 
-bool g_bCvarReverseIfAdmin;
 float g_fCvarDamageMultiplier;
-bool g_bCvarReverseIfBot;
 float g_fAccumDamage[MAXPLAYERS + 1];
 float g_fAccumDamageAsTank[MAXPLAYERS + 1];
 float g_fAccumDamageAsInfected[MAXPLAYERS + 1];
@@ -61,6 +59,8 @@ float g_fSurvivorMaxDamage;
 float g_fInfectedMaxDamage;
 float g_fTankMaxDamage;
 int g_iBanDuration;
+bool g_bCvarReverseIfAdmin;
+bool g_bCvarReverseIfBot;
 bool g_bCvarReverseIfIncapped;
 bool g_bCvarReverseIfAttackerIncapped;
 bool g_bCvarSelfDamage;
@@ -69,6 +69,7 @@ bool g_bGrace[MAXPLAYERS + 1];
 bool g_bToggle[MAXPLAYERS + 1];
 bool g_bCvarAllow, g_bMapStarted;
 bool g_bL4D2;
+bool g_bAllReversePlugins;
 
 public Plugin myinfo =
 {
@@ -94,6 +95,17 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	}
 	strcopy(error, err_max, "Plugin only supports Left 4 Dead 1 & 2.");
 	return APLRes_SilentFailure;
+}
+
+public void OnAllPluginsLoaded()
+{
+	if (FindConVar("RBaEA_version") != null)
+	{
+		if (FindConVar("RBaTA_version") != null)
+		{
+			g_bAllReversePlugins = true;
+		}
+	}
 }
 
 public void OnPluginStart()
@@ -306,7 +318,7 @@ public void OnClientPutInServer(int client)
 
 public void OnClientPostAdminCheck(int client)
 {
-	CreateTimer(16.0, RFFNotice, client);
+	CreateTimer(16.0, AnnouncePlugin, client);
 }
 
 public void OnClientDisconnect(int client)
@@ -398,8 +410,8 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 				{
 					if (!g_bToggle[attacker])
 					{
-						PrintToServer("%N %t %N", attacker, "Attacked", victim);
-						PrintToChat(attacker, "[RFF] %t %N, %t.", "YouAttacked", victim, "SurvivorFF");
+						PrintToServer("%N %T %N", attacker, "Attacked", LANG_SERVER, victim);
+						CPrintToChat(attacker, "{orange}[ReverseFF]{lightgreen} %t {olive}%N{lightgreen}, %t.", "YouAttacked", victim, "SurvivorFF");
 						g_bToggle[attacker] = true;
 						CreateTimer(0.15, FlipToggle, attacker);
 					}
@@ -452,8 +464,8 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 				}
 				//inflict damage to attacker
 				SDKHooks_TakeDamage(attacker, inflictor, victim, damage, damagetype, weapon, damageForce, damagePosition);
-				PrintToServer("%N %t %N", attacker, "Attacked", victim);
-				PrintToChat(attacker, "[RFF] %t %N, %t.", "YouAttacked", victim, "InfectedFF");
+				PrintToServer("%N %T %N", attacker, "Attacked", LANG_SERVER, victim);
+				CPrintToChat(attacker, "{orange}[ReverseFF]{lightgreen} %t {olive}%N{lightgreen}, %t.", "YouAttacked", victim, "InfectedFF");
 			}
 			//no damage for victim
 			return Plugin_Handled;
@@ -510,11 +522,18 @@ stock bool IsClientIncapped(int client)
 	return !!GetEntProp(client, Prop_Send, "m_isIncapacitated", 1);
 }
 
-public Action RFFNotice(Handle timer, int client)
+public Action AnnouncePlugin(Handle timer, int client)
 {
 	if (IsClientInGame(client) && g_bCvarAllow)
 	{
-		PrintToChat(client, "[RFF] %t", "Announce");
+		if (g_bAllReversePlugins)
+		{
+			CPrintToChat(client, "%T", "AnnounceAll", client);
+		}
+		else
+		{
+			CPrintToChat(client, "%T", "Announce", client);
+		}
 	}
 }
 
@@ -567,4 +586,17 @@ stock bool ReverseIfVictimIncapped (int victim)
 stock bool ReverseIfAttackerIncapped (int attacker)
 {
 	return (IsClientIncapped(attacker) && !g_bCvarReverseIfAttackerIncapped);
+}
+
+public void CPrintToChat(int client, char[] message, any ...)
+{
+    static char buffer[512];
+    VFormat(buffer, sizeof(buffer), message, 3);
+
+    ReplaceString(buffer, sizeof(buffer), "{white}", "\x01");
+    ReplaceString(buffer, sizeof(buffer), "{lightgreen}", "\x03");
+    ReplaceString(buffer, sizeof(buffer), "{orange}", "\x04");
+    ReplaceString(buffer, sizeof(buffer), "{olive}", "\x05");
+
+    PrintToChat(client, buffer);
 }
