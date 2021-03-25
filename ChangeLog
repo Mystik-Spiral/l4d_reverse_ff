@@ -1,3 +1,7 @@
+25-Mar-2021 v2.4
+- Add new ConVar options for melee and chainsaw.
+- Fix minor bug if player quit while pinned by special infected (hunter/smoker/jockey/charger).
+
 08-Mar-2021 v2.3
 - Check for two ReverseBurn plugins, and if found, only do a single combined announcement for all of them.
 - Added colors to Announcement message and to messages displayed to attacker when friendly-fire is reversed.
