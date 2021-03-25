@@ -15,6 +15,8 @@ This plugin reverses damage from the grenade launcher, but does not otherwise re
     Option to reverse friendly-fire when victim is incapacitated. [reverseff_incapped (default: false)]
     Option to reverse friendly-fire when attacker is incapacitated. [reverseff_attackerincapped (default: false)]
     Option to reverse friendly-fire when damage from mounted gun. [reverseff_mountedgun (default: true)]
+    Option to reverse friendly-fire when damage from melee weapon. [reverseff_melee (default: true)]
+    Option to reverse friendly-fire when damage from chainsaw. [reverseff_chainsaw (default: true)]
     Option to treat friendly-fire as self damage (or reversed accusations). [reverseff_self (default: false)]
     Option to specify maximum survivor damage allowed per chapter before ban. [reverseff_survivormaxdmg (default: 200)]
     Option to specify maximum infected damage allowed per chapter before ban. [reverseff_infectedmaxdmg (default: 50)]
@@ -22,8 +24,22 @@ This plugin reverses damage from the grenade launcher, but does not otherwise re
     Option to specify ban duration in minutes (0=permanent, -1=kick). [reverseff_banduration (default: 10)]
     Option to enable/disable plugin by game mode. [reverseff_modes_on, reverseff_modes_off, reverseff_modes_tog (default: enabled for all game modes)]
 
+
+Suggestion:
+
+To minimize griefer impact, use this plugin along with...
+
+ReverseBurn and ExplosionAnnouncer (l4d_ReverseBurn_and_ExplosionAnnouncer)
+...and...
+ReverseBurn and ThrowableAnnouncer (l4d_ReverseBurn_and_ThrowableAnnouncer)
+
+When these plugins are combined, griefers cannot inflict friendly-fire, and it minimizes damage to victims for molotov and explodable burn types (gascans, fireworks, etc.).
+Although griefers will take significant damage, other players may not notice any difference in game play.
+
 Want to contribute code enhancements?
 Create a pull request using this GitHub repository: https://github.com/Mystik-Spiral/l4d_reverse_ff
+
+Plugin discussion: https://forums.alliedmods.net/showthread.php?t=329035
 
 */
 
@@ -34,7 +50,7 @@ Create a pull request using this GitHub repository: https://github.com/Mystik-Sp
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "2.3"
+#define PLUGIN_VERSION "2.4"
 #define CVAR_FLAGS FCVAR_NOTIFY
 #define TRANSLATION_FILENAME "l4d_reverse_ff.phrases"
 
@@ -49,6 +65,8 @@ ConVar cvar_reverseff_incapped;
 ConVar cvar_reverseff_attackerincapped;
 ConVar cvar_reverseff_self;
 ConVar cvar_reverseff_mountedgun;
+ConVar cvar_reverseff_melee;
+ConVar cvar_reverseff_chainsaw;
 ConVar g_hCvarAllow, g_hCvarMPGameMode, g_hCvarModesOn, g_hCvarModesOff, g_hCvarModesTog;
 
 float g_fCvarDamageMultiplier;
@@ -65,6 +83,8 @@ bool g_bCvarReverseIfIncapped;
 bool g_bCvarReverseIfAttackerIncapped;
 bool g_bCvarSelfDamage;
 bool g_bCvarReverseIfMountedgun;
+bool g_bCvarReverseIfMelee;
+bool g_bCvarReverseIfChainsaw;
 bool g_bGrace[MAXPLAYERS + 1];
 bool g_bToggle[MAXPLAYERS + 1];
 bool g_bCvarAllow, g_bMapStarted;
@@ -124,6 +144,8 @@ public void OnPluginStart()
 	cvar_reverseff_tankmaxdmg = CreateConVar("reverseff_tankmaxdmg", "300", "Maximum damage allowed before kick/ban tank", CVAR_FLAGS);
 	cvar_reverseff_banduration = CreateConVar("reverseff_banduration", "10", "Ban duration in minutes (0=permanent, -1=kick)", CVAR_FLAGS);
 	cvar_reverseff_mountedgun = CreateConVar("reverseff_mountedgun", "1", "0=Do not ReverseFF from mountedgun, 1=ReverseFF from mountedgun", CVAR_FLAGS);
+	cvar_reverseff_melee = CreateConVar("reverseff_melee", "1", "0=Do not ReverseFF from melee, 1=ReverseFF from melee", CVAR_FLAGS);
+	cvar_reverseff_chainsaw = CreateConVar("reverseff_chainsaw", "1", "0=Do not ReverseFF from chainsaw, 1=ReverseFF from chainsaw", CVAR_FLAGS);
 	g_hCvarAllow = CreateConVar("reverseff_enabled", "1", "0=Plugin off, 1=Plugin on.", CVAR_FLAGS );
 	g_hCvarModesOn = CreateConVar("reverseff_modes_on", "", "Game mode names on, comma separated, no spaces. (Empty=all).", CVAR_FLAGS );
 	g_hCvarModesOff = CreateConVar("reverseff_modes_off", "", "Game mode names off, comma separated, no spaces. (Empty=none).", CVAR_FLAGS );
@@ -141,6 +163,8 @@ public void OnPluginStart()
 	cvar_reverseff_attackerincapped.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_self.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_mountedgun.AddChangeHook(action_ConVarChanged);
+	cvar_reverseff_melee.AddChangeHook(action_ConVarChanged);
+	cvar_reverseff_chainsaw.AddChangeHook(action_ConVarChanged);
 	g_hCvarMPGameMode = FindConVar("mp_gamemode");
 	g_hCvarMPGameMode.AddChangeHook(ConVarChanged_Allow);
 	g_hCvarAllow.AddChangeHook(ConVarChanged_Allow);
@@ -218,6 +242,8 @@ void GetCvars()
 	g_bCvarReverseIfAttackerIncapped = cvar_reverseff_attackerincapped.BoolValue;
 	g_bCvarSelfDamage = cvar_reverseff_self.BoolValue;
 	g_bCvarReverseIfMountedgun = cvar_reverseff_mountedgun.BoolValue;
+	g_bCvarReverseIfMelee = cvar_reverseff_melee.BoolValue;
+	g_bCvarReverseIfChainsaw = cvar_reverseff_chainsaw.BoolValue;
 }
 
 void IsAllowed()
@@ -323,7 +349,6 @@ public void OnClientPostAdminCheck(int client)
 
 public void OnClientDisconnect(int client)
 {
-	SDKUnhook(client, SDKHook_OnTakeDamage, OnTakeDamage);
 	g_bGrace[client] = false;
 	g_fAccumDamage[client] = 0.0;
 	g_fAccumDamageAsTank[client] = 0.0;
@@ -357,14 +382,26 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 		{
 			ReverseIfMountedgun = true;
 		}
+		bool bWeaponMelee = IsWeaponMelee(sInflictorClass);
+		bool ReverseIfMelee = false;
+		if (bWeaponMelee && !g_bCvarReverseIfMelee)
+		{
+			ReverseIfMelee = true;
+		}
+		bool bWeaponChainsaw = IsWeaponChainsaw(sInflictorClass);
+		bool ReverseIfChainsaw = false;
+		if (bWeaponChainsaw && !g_bCvarReverseIfChainsaw)
+		{
+			ReverseIfChainsaw = true;
+		}
 		//debug weapon
 		//PrintToServer("GL: %b, MG: %b, InfCls: %s, weapon: %i", bWeaponGL, bWeaponMG, sInflictorClass, weapon);
 		//if weapon caused damage
 		if (weapon > 0 || bWeaponGL || bWeaponMG)
 		{
-			//check reverse friendly-fire parameters for: attacker=admin, victim=bot, victim=incapped, attacker=incapped, damage from mountedgun
+			//check reverse friendly-fire parameters for: attacker=admin, victim=bot, victim=incapped, attacker=incapped, damage from mountedgun, melee, or chainsaw
 			//regardless of the above settings, do not reverse friendly-fire during grace period after victim freed from SI
-			if (!(ReverseIfAttackerAdmin(attacker) || ReverseIfVictimBot(victim) || ReverseIfVictimIncapped(victim) || ReverseIfAttackerIncapped(attacker) || ReverseIfMountedgun) && (!g_bGrace[victim]))
+			if (!(ReverseIfAttackerAdmin(attacker) || ReverseIfVictimBot(victim) || ReverseIfVictimIncapped(victim) || ReverseIfAttackerIncapped(attacker) || ReverseIfMountedgun || ReverseIfMelee || ReverseIfChainsaw) && (!g_bGrace[victim]))
 			{
 				//special ammo checks
 				if (IsSpecialAmmo(weapon, attacker, inflictor, damagetype, bWeaponGL))
@@ -485,6 +522,16 @@ stock bool IsWeaponMinigun(char[] sInflictorClass)
 	return (StrEqual(sInflictorClass, "prop_minigun") || StrEqual(sInflictorClass, "prop_minigun_l4d1") || StrEqual(sInflictorClass, "prop_mounted_machine_gun"));
 }
 
+stock bool IsWeaponMelee(char[] sInflictorClass)
+{
+	return (StrEqual(sInflictorClass, "weapon_melee"));
+}
+
+stock bool IsWeaponChainsaw(char[] sInflictorClass)
+{
+	return (StrEqual(sInflictorClass, "weapon_chainsaw"));
+}
+
 stock bool IsSpecialAmmo(int weapon, int attacker, int inflictor, int damagetype, bool bWeaponGL)
 {
 	//damage from gun with special ammo
@@ -541,19 +588,12 @@ public Action Event_StartGrace (Event event, const char[] name, bool dontBroadca
 {
 	int client = GetClientOfUserId(event.GetInt("victim"));
 	g_bGrace[client] = true;
-	//debug grace period
-	//PrintToServer("Start grace period for %i %N", client, client);
 	CreateTimer(2.5, EndGrace, client);
 }
 
 public Action EndGrace (Handle timer, int client)
 {
-	if (IsClientInGame(client))
-	{
 		g_bGrace[client] = false;
-		//debug grace period
-		//PrintToServer("End grace period for %i %N", client, client);
-	}
 }
 
 public Action FlipToggle(Handle timer, int attacker)
