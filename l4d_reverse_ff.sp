@@ -76,7 +76,9 @@ float g_fAccumDamageAsInfected[MAXPLAYERS + 1];
 float g_fSurvivorMaxDamage;
 float g_fInfectedMaxDamage;
 float g_fTankMaxDamage;
+
 int g_iBanDuration;
+
 bool g_bCvarReverseIfAdmin;
 bool g_bCvarReverseIfBot;
 bool g_bCvarReverseIfIncapped;
@@ -90,6 +92,7 @@ bool g_bToggle[MAXPLAYERS + 1];
 bool g_bCvarAllow, g_bMapStarted;
 bool g_bL4D2;
 bool g_bAllReversePlugins;
+bool g_bLateLoad;
 
 public Plugin myinfo =
 {
@@ -106,11 +109,13 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	if (test == Engine_Left4Dead2)
 	{
 		g_bL4D2 = true;
+		g_bLateLoad = late;
 		return APLRes_Success;
 	}
 	if ( test == Engine_Left4Dead )
 	{
 		g_bL4D2 = false;
+		g_bLateLoad = late;
 		return APLRes_Success;
 	}
 	strcopy(error, err_max, "Plugin only supports Left 4 Dead 1 & 2.");
@@ -180,6 +185,14 @@ public void OnPluginStart()
 		HookEvent("charger_pummel_end", Event_StartGrace);
 	}
 	
+	if (g_bLateLoad)
+	{
+		for (int client = 1; client <= MaxClients; client++)
+		{
+			if (IsClientInGame(client))
+				OnClientPutInServer(client);
+		}
+	}
 }
 
 public void LoadPluginTranslations()
