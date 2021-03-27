@@ -50,7 +50,7 @@ Plugin discussion: https://forums.alliedmods.net/showthread.php?t=329035
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "2.4"
+#define PLUGIN_VERSION "2.5alpha"
 #define CVAR_FLAGS FCVAR_NOTIFY
 #define TRANSLATION_FILENAME "l4d_reverse_ff.phrases"
 
@@ -93,6 +93,8 @@ bool g_bCvarAllow, g_bMapStarted;
 bool g_bL4D2;
 bool g_bAllReversePlugins;
 bool g_bLateLoad;
+
+Handle g_hEndGrace[MAXPLAYERS + 1];
 
 public Plugin myinfo =
 {
@@ -178,6 +180,7 @@ public void OnPluginStart()
 	g_hCvarModesTog.AddChangeHook(ConVarChanged_Allow);
 	
 	HookEvent("choke_stopped", Event_StartGrace);
+	HookEvent("tongue_release", Event_StartGrace);
 	HookEvent("pounce_stopped", Event_StartGrace);
 	if (g_bL4D2)
 	{
@@ -600,8 +603,22 @@ public Action AnnouncePlugin(Handle timer, int client)
 public Action Event_StartGrace (Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("victim"));
-	g_bGrace[client] = true;
-	CreateTimer(2.5, EndGrace, client);
+	if (client > 0)
+	{
+		if (g_bGrace[client])
+		{
+			if (g_hEndGrace[client] != INVALID_HANDLE)
+			{
+				KillTimer(g_hEndGrace[client]);
+				g_hEndGrace[client] = INVALID_HANDLE;
+			}
+		}
+		else
+		{
+			g_bGrace[client] = true;
+		}
+		g_hEndGrace[client] = CreateTimer(2.0, EndGrace, client);
+	}
 }
 
 public Action EndGrace (Handle timer, int client)
