@@ -1,3 +1,9 @@
+27-Mar-2021 v2.5
+- Add new ConVar option to ReverseFF during Smoker pull or Charger carry.
+- Fixed ReverseFF when victim freed from Smoker tongue after pull started but before being choked.
+- Shorten grace period (God Frames) from 2.5 seconds to 2.0 seconds.
+- Add support for late load.
+
 25-Mar-2021 v2.4
 - Add new ConVar options for melee and chainsaw.
 - Fix minor bug if player quit while pinned by special infected (hunter/smoker/jockey/charger).
