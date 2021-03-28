@@ -17,6 +17,7 @@ This plugin reverses damage from the grenade launcher, but does not otherwise re
     Option to reverse friendly-fire when damage from mounted gun. [reverseff_mountedgun (default: true)]
     Option to reverse friendly-fire when damage from melee weapon. [reverseff_melee (default: true)]
     Option to reverse friendly-fire when damage from chainsaw. [reverseff_chainsaw (default: true)]
+    Option to reverse friendly-fire during Smoker pull or Charger carry. [reverseff_pullcarry (default: false)]
     Option to treat friendly-fire as self damage (or reversed accusations). [reverseff_self (default: false)]
     Option to specify maximum survivor damage allowed per chapter before ban. [reverseff_survivormaxdmg (default: 200)]
     Option to specify maximum infected damage allowed per chapter before ban. [reverseff_infectedmaxdmg (default: 50)]
@@ -50,7 +51,7 @@ Plugin discussion: https://forums.alliedmods.net/showthread.php?t=329035
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "2.5alpha"
+#define PLUGIN_VERSION "2.5beta"
 #define CVAR_FLAGS FCVAR_NOTIFY
 #define TRANSLATION_FILENAME "l4d_reverse_ff.phrases"
 
@@ -67,6 +68,7 @@ ConVar cvar_reverseff_self;
 ConVar cvar_reverseff_mountedgun;
 ConVar cvar_reverseff_melee;
 ConVar cvar_reverseff_chainsaw;
+ConVar cvar_reverseff_pullcarry;
 ConVar g_hCvarAllow, g_hCvarMPGameMode, g_hCvarModesOn, g_hCvarModesOff, g_hCvarModesTog;
 
 float g_fCvarDamageMultiplier;
@@ -83,6 +85,7 @@ bool g_bCvarReverseIfAdmin;
 bool g_bCvarReverseIfBot;
 bool g_bCvarReverseIfIncapped;
 bool g_bCvarReverseIfAttackerIncapped;
+bool g_bCvarReverseIfPullCarry;
 bool g_bCvarSelfDamage;
 bool g_bCvarReverseIfMountedgun;
 bool g_bCvarReverseIfMelee;
@@ -153,6 +156,7 @@ public void OnPluginStart()
 	cvar_reverseff_mountedgun = CreateConVar("reverseff_mountedgun", "1", "0=Do not ReverseFF from mountedgun, 1=ReverseFF from mountedgun", CVAR_FLAGS);
 	cvar_reverseff_melee = CreateConVar("reverseff_melee", "1", "0=Do not ReverseFF from melee, 1=ReverseFF from melee", CVAR_FLAGS);
 	cvar_reverseff_chainsaw = CreateConVar("reverseff_chainsaw", "1", "0=Do not ReverseFF from chainsaw, 1=ReverseFF from chainsaw", CVAR_FLAGS);
+	cvar_reverseff_pullcarry = CreateConVar("reverseff_pullcarry", "0", "0=Do not ReverseFF during Smoker pull or Charger carry, 1=ReverseFF from pull/carry", CVAR_FLAGS);
 	g_hCvarAllow = CreateConVar("reverseff_enabled", "1", "0=Plugin off, 1=Plugin on.", CVAR_FLAGS );
 	g_hCvarModesOn = CreateConVar("reverseff_modes_on", "", "Game mode names on, comma separated, no spaces. (Empty=all).", CVAR_FLAGS );
 	g_hCvarModesOff = CreateConVar("reverseff_modes_off", "", "Game mode names off, comma separated, no spaces. (Empty=none).", CVAR_FLAGS );
@@ -172,6 +176,7 @@ public void OnPluginStart()
 	cvar_reverseff_mountedgun.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_melee.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_chainsaw.AddChangeHook(action_ConVarChanged);
+	cvar_reverseff_pullcarry.AddChangeHook(action_ConVarChanged);
 	g_hCvarMPGameMode = FindConVar("mp_gamemode");
 	g_hCvarMPGameMode.AddChangeHook(ConVarChanged_Allow);
 	g_hCvarAllow.AddChangeHook(ConVarChanged_Allow);
@@ -182,10 +187,12 @@ public void OnPluginStart()
 	HookEvent("choke_stopped", Event_StartGrace);
 	HookEvent("tongue_release", Event_StartGrace);
 	HookEvent("pounce_stopped", Event_StartGrace);
+	HookEvent("tongue_grab", Event_PullCarry);
 	if (g_bL4D2)
 	{
 		HookEvent("jockey_ride_end", Event_StartGrace);
 		HookEvent("charger_pummel_end", Event_StartGrace);
+		HookEvent("charger_carry_start", Event_PullCarry);
 	}
 	
 	if (g_bLateLoad)
@@ -260,6 +267,7 @@ void GetCvars()
 	g_bCvarReverseIfMountedgun = cvar_reverseff_mountedgun.BoolValue;
 	g_bCvarReverseIfMelee = cvar_reverseff_melee.BoolValue;
 	g_bCvarReverseIfChainsaw = cvar_reverseff_chainsaw.BoolValue;
+	g_bCvarReverseIfPullCarry = cvar_reverseff_pullcarry.BoolValue;
 }
 
 void IsAllowed()
@@ -624,6 +632,15 @@ public Action Event_StartGrace (Event event, const char[] name, bool dontBroadca
 public Action EndGrace (Handle timer, int client)
 {
 		g_bGrace[client] = false;
+}
+
+public Action Event_PullCarry (Event event, const char[] name, bool dontBroadcast)
+{
+	int client = GetClientOfUserId(event.GetInt("victim"));
+	if (!g_bCvarReverseIfPullCarry)
+	{
+		g_bGrace[client] = true;
+	}
 }
 
 public Action FlipToggle(Handle timer, int attacker)
