@@ -51,7 +51,7 @@ Plugin discussion: https://forums.alliedmods.net/showthread.php?t=329035
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "2.5beta"
+#define PLUGIN_VERSION "2.5"
 #define CVAR_FLAGS FCVAR_NOTIFY
 #define TRANSLATION_FILENAME "l4d_reverse_ff.phrases"
 
