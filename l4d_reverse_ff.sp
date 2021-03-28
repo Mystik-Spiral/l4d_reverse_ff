@@ -632,6 +632,7 @@ public Action Event_StartGrace (Event event, const char[] name, bool dontBroadca
 public Action EndGrace (Handle timer, int client)
 {
 		g_bGrace[client] = false;
+		g_hEndGrace[client] = INVALID_HANDLE;
 }
 
 public Action Event_PullCarry (Event event, const char[] name, bool dontBroadcast)
