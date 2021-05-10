@@ -9,6 +9,7 @@
 --- If the attacker is using explosive/incendiary ammo, the victim will not stumble/burn, but the attacker will.
 --- Due to this fix, the "reverseff_self" ConVar is no longer used and needs to be removed from the cfg file.
 --- Remove "reverseff_self" entry from l4d_reverse_ff.cfg or just delete the file and let the plugin recreate it.
+- Allow kick/ban feature to be disabled by setting reverseff_*maxdmg to 0.
 
 28-Mar-2021 v2.5
 - Add new ConVar option to ReverseFF during Smoker pull or Charger carry.
