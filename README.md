@@ -24,7 +24,7 @@ Supports language translations using "l4d_reverse_ff.phrases.txt" file.
 - Option to ReverseFF when damage from chainsaw.  [reverseff_chainsaw (default: true)]
 - Option to ReverseFF during Smoker pull or Charger carry. [reverseff_pullcarry (default: false)]
 - Option to specify extra damage if attacker used explosive/incendiary ammo. [reverseff_multiplier (default: 1.125 = 12.5%)]
-- Option to specify maximum survivor damage allowed per chapter before kick/ban. [reverseff_survivormaxdmg (default: 200)]
+- Option to specify maximum survivor damage allowed per chapter before kick/ban. [reverseff_survivormaxdmg (default: 200, 0=disable)]
 - Option to specify maximum infected damage allowed per chapter before kick/ban. [reverseff_infectedmaxdmg (default: 50)]
 - Option to specify maximum tank damage allowed per chapter before kick/ban.  [reverseff_tankdmg (default: 300)]
 - Option to specify kick/ban duration in minutes. (0=permanent, -1=kick). [reverseff_banduration (default: 10)]
