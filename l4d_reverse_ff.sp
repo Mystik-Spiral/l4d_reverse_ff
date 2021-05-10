@@ -18,7 +18,6 @@ This plugin reverses damage from the grenade launcher, but does not otherwise re
     Option to reverse friendly-fire when damage from melee weapon. [reverseff_melee (default: true)]
     Option to reverse friendly-fire when damage from chainsaw. [reverseff_chainsaw (default: true)]
     Option to reverse friendly-fire during Smoker pull or Charger carry. [reverseff_pullcarry (default: false)]
-    Option to treat friendly-fire as self damage (or reversed accusations). [reverseff_self (default: false)]
     Option to specify maximum survivor damage allowed per chapter before ban. [reverseff_survivormaxdmg (default: 200)]
     Option to specify maximum infected damage allowed per chapter before ban. [reverseff_infectedmaxdmg (default: 50)]
     Option to specify maximum tank damage allowed per chapter before ban. [reverseff_tankmaxdmg (default: 300)]
@@ -37,6 +36,10 @@ ReverseBurn and ThrowableAnnouncer (l4d_ReverseBurn_and_ThrowableAnnouncer)
 When these plugins are combined, griefers cannot inflict friendly-fire, and it minimizes damage to victims for molotov and explodable burn types (gascans, fireworks, etc.).
 Although griefers will take significant damage, other players may not notice any difference in game play.
 
+
+Credits:
+Chainsaw damage bug fixed by pan0s
+
 Want to contribute code enhancements?
 Create a pull request using this GitHub repository: https://github.com/Mystik-Spiral/l4d_reverse_ff
 
@@ -51,7 +54,7 @@ Plugin discussion: https://forums.alliedmods.net/showthread.php?t=329035
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "2.5"
+#define PLUGIN_VERSION "2.6"
 #define CVAR_FLAGS FCVAR_NOTIFY
 #define TRANSLATION_FILENAME "l4d_reverse_ff.phrases"
 
@@ -64,7 +67,6 @@ ConVar cvar_reverseff_tankmaxdmg;
 ConVar cvar_reverseff_banduration;
 ConVar cvar_reverseff_incapped;
 ConVar cvar_reverseff_attackerincapped;
-ConVar cvar_reverseff_self;
 ConVar cvar_reverseff_mountedgun;
 ConVar cvar_reverseff_melee;
 ConVar cvar_reverseff_chainsaw;
@@ -78,6 +80,8 @@ float g_fAccumDamageAsInfected[MAXPLAYERS + 1];
 float g_fSurvivorMaxDamage;
 float g_fInfectedMaxDamage;
 float g_fTankMaxDamage;
+float g_fDmgFrc[3] = {0.0, 0.0, 0.0};
+float g_fDmgPos[3] = {0.0, 0.0, 0.0};
 
 int g_iBanDuration;
 
@@ -86,7 +90,6 @@ bool g_bCvarReverseIfBot;
 bool g_bCvarReverseIfIncapped;
 bool g_bCvarReverseIfAttackerIncapped;
 bool g_bCvarReverseIfPullCarry;
-bool g_bCvarSelfDamage;
 bool g_bCvarReverseIfMountedgun;
 bool g_bCvarReverseIfMelee;
 bool g_bCvarReverseIfChainsaw;
@@ -105,7 +108,7 @@ public Plugin myinfo =
 	author = "Mystic Spiral",
 	description = "Reverses friendly-fire... attacker takes damage, victim does not.",
 	version = PLUGIN_VERSION,
-	url = "https://forums.alliedmods.net/showthread.php?p=2727641#post2727641"
+	url = "https://forums.alliedmods.net/showthread.php?t=329035"
 }
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
@@ -147,9 +150,8 @@ public void OnPluginStart()
 	cvar_reverseff_bot = CreateConVar("reverseff_bot", "0", "0=Do not ReverseFF if victim is bot, 1=ReverseFF if victim is bot", CVAR_FLAGS);
 	cvar_reverseff_incapped = CreateConVar("reverseff_incapped", "0", "0=Do not ReverseFF if victim is incapped, 1=ReverseFF if victim is incapped", CVAR_FLAGS);
 	cvar_reverseff_attackerincapped = CreateConVar("reverseff_attackerincapped", "0", "0=Do not ReverseFF if attacker is incapped, 1=ReverseFF if attacker is incapped", CVAR_FLAGS);
-	cvar_reverseff_self = CreateConVar("reverseff_self", "0", "0=Treat ReverseFF as reversed accusations, 1=Treat ReverseFF as self damage", CVAR_FLAGS);
 	cvar_reverseff_multiplier = CreateConVar("reverseff_multiplier", "1.125", "Special ammo damage multiplier (default=12.5%)", CVAR_FLAGS);
-	cvar_reverseff_survivormaxdmg = CreateConVar("reverseff_survivormaxdmg", "200", "Maximum damage allowed before kick/ban survivor", CVAR_FLAGS);
+	cvar_reverseff_survivormaxdmg = CreateConVar("reverseff_survivormaxdmg", "200", "Maximum damage allowed before kick/ban survivor, 0=no action", CVAR_FLAGS);
 	cvar_reverseff_infectedmaxdmg = CreateConVar("reverseff_infectedmaxdmg", "50", "Maximum damage allowed before kick/ban infected", CVAR_FLAGS);
 	cvar_reverseff_tankmaxdmg = CreateConVar("reverseff_tankmaxdmg", "300", "Maximum damage allowed before kick/ban tank", CVAR_FLAGS);
 	cvar_reverseff_banduration = CreateConVar("reverseff_banduration", "10", "Ban duration in minutes (0=permanent, -1=kick)", CVAR_FLAGS);
@@ -161,7 +163,7 @@ public void OnPluginStart()
 	g_hCvarModesOn = CreateConVar("reverseff_modes_on", "", "Game mode names on, comma separated, no spaces. (Empty=all).", CVAR_FLAGS );
 	g_hCvarModesOff = CreateConVar("reverseff_modes_off", "", "Game mode names off, comma separated, no spaces. (Empty=none).", CVAR_FLAGS );
 	g_hCvarModesTog = CreateConVar("reverseff_modes_tog", "0", "Game type bitflags on, add #s together. 0=All, 1=Coop, 2=Survival, 4=Versus, 8=Scavenge", CVAR_FLAGS );
-	AutoExecConfig(true, "l4d_reverse_ff");
+	AutoExecConfig(true, "l4d2_reverse_ff");
 	
 	cvar_reverseff_admin.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_multiplier.AddChangeHook(action_ConVarChanged);
@@ -172,7 +174,6 @@ public void OnPluginStart()
 	cvar_reverseff_banduration.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_incapped.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_attackerincapped.AddChangeHook(action_ConVarChanged);
-	cvar_reverseff_self.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_mountedgun.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_melee.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_chainsaw.AddChangeHook(action_ConVarChanged);
@@ -263,7 +264,6 @@ void GetCvars()
 	g_iBanDuration = cvar_reverseff_banduration.IntValue;
 	g_bCvarReverseIfIncapped = cvar_reverseff_incapped.BoolValue;
 	g_bCvarReverseIfAttackerIncapped = cvar_reverseff_attackerincapped.BoolValue;
-	g_bCvarSelfDamage = cvar_reverseff_self.BoolValue;
 	g_bCvarReverseIfMountedgun = cvar_reverseff_mountedgun.BoolValue;
 	g_bCvarReverseIfMelee = cvar_reverseff_melee.BoolValue;
 	g_bCvarReverseIfChainsaw = cvar_reverseff_chainsaw.BoolValue;
@@ -419,7 +419,7 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 			ReverseIfChainsaw = true;
 		}
 		//debug weapon
-		//PrintToServer("GL: %b, MG: %b, InfCls: %s, weapon: %i", bWeaponGL, bWeaponMG, sInflictorClass, weapon);
+		// PrintToServer("GL: %b, MG: %b, InfCls: %s, weapon: %i", bWeaponGL, bWeaponMG, sInflictorClass, weapon);
 		//if weapon caused damage
 		if (weapon > 0 || bWeaponGL || bWeaponMG)
 		{
@@ -438,7 +438,7 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 				//debug acculated damage
 				//PrintToServer("Survivor Atk: %N, Dmg: %f, AcmDmg: %f, SurvMaxDmg: %f", attacker, damage, g_fAccumDamage[attacker], g_fSurvivorMaxDamage);
 				//does accumulated damage exceed "reverseff_survivormaxdamage"
-				if ((g_fAccumDamage[attacker] > g_fSurvivorMaxDamage) && !IsFakeClient(attacker))
+				if (g_fSurvivorMaxDamage > 0 && (g_fAccumDamage[attacker] > g_fSurvivorMaxDamage) && !IsFakeClient(attacker))
 				{
 					if (g_iBanDuration == -1)
 					{
@@ -459,14 +459,49 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 					//do not inflict damage since player was kicked/banned
 					return Plugin_Handled;
 				}
-				//check whether to treat FF as self-damage
-				int vicatk = victim;
-				if (g_bCvarSelfDamage)
+
+				// pan0s | 20-Apr-2021 | Fixed: Server crashes if reversing chainsaw damage makes the attacker incapacitated or dead.
+				// pan0s | start chainsaw fix part 1
+				bool bIsDmgFromChainsaw = false;
+				char sWeaponName[32] = "null";
+				if (weapon > 0)
 				{
-					vicatk = attacker;
+					GetEdictClassname(weapon, sWeaponName, 32);
 				}
-				//inflict damage to attacker
-				SDKHooks_TakeDamage(attacker, inflictor, vicatk, damage, damagetype, weapon, damageForce, damagePosition);
+				if(StrEqual(sWeaponName, "weapon_chainsaw"))
+				{
+					// Create a DataPack to pass to the function SDKHooks_TakeDamage.
+					Handle dataPack = CreateDataPack();
+					WritePackCell(dataPack, attacker);
+					WritePackCell(dataPack, inflictor);
+					WritePackCell(dataPack, victim);
+					WritePackFloat(dataPack, damage);
+					WritePackCell(dataPack, damagetype);
+					WritePackCell(dataPack, weapon);
+					for (int i=0; i<3; i++)
+					{
+						WritePackFloat(dataPack, damageForce[i]);
+					}
+					for (int i=0; i<3; i++)
+					{
+						WritePackFloat(dataPack, damagePosition[i]);
+					}
+					// Adding a timer fixes the bug, reason unknown.
+					CreateTimer(0.01, ChainsawTakeDamageTimer, dataPack);
+					bIsDmgFromChainsaw = true;
+				}
+				// pan0s | end chainsaw fix part 1
+				
+				if (!bIsDmgFromChainsaw)
+				{
+					//inflict (non-chainsaw) damage to attacker
+					//add 1HP to victim then damage them for 1HP so the displayed message and vocalization order are correct,
+					//then damage attacker as self-inflicted for actual damage so there is no vocalization, just pain grunt.
+					SetEntityHealth(victim, GetClientHealth(victim) + 1);
+					SDKHooks_TakeDamage(victim, inflictor, attacker, 1.0, 0, weapon, g_fDmgFrc, g_fDmgPos);
+					SDKHooks_TakeDamage(attacker, inflictor, attacker, damage, damagetype, weapon, damageForce, damagePosition);
+				}
+
 				if (damage > 0 && !IsFakeClient(attacker))
 				{
 					if (!g_bToggle[attacker])
@@ -535,6 +570,39 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 	//all other damage behaves normal
 	return Plugin_Continue;
 }
+
+// pan0s | 20-Apr-2021 | Fixed: Server crashes if reversing chainsaw damage makes the attacker incapacitated or dead.
+// pan0s | start chainsaw fix part 2
+public Action ChainsawTakeDamageTimer(Handle timer, Handle dataPack)
+{
+	// Read the DataPack.
+	ResetPack(dataPack);
+	int attacker = ReadPackCell(dataPack);
+	int inflictor = ReadPackCell(dataPack);
+	int victim = ReadPackCell(dataPack);
+	float damage = ReadPackFloat(dataPack);
+	int damagetype = ReadPackCell(dataPack);
+	int weapon = ReadPackCell(dataPack);
+	float damageForce[3];
+	for (int i=0; i<3; i++)
+	{
+		damageForce[i] = ReadPackFloat(dataPack);
+	}
+	float damagePosition[3];
+	for (int i=0; i<3; i++)
+	{
+		damagePosition[i] = ReadPackFloat(dataPack);
+	}
+	//inflict (chainsaw) damage to attacker
+	//SDKHooks_TakeDamage(attacker, inflictor, victim, damage, damagetype, weapon, damageForce, damagePosition);
+	//add 1HP to victim then damage them for 1HP so the displayed message and vocalization order are correct,
+	//then damage attacker as self damage so there is no vocalization, just pain grunt.
+	SetEntityHealth(victim, GetClientHealth(victim) + 1);
+	SDKHooks_TakeDamage(victim, inflictor, attacker, 1.0, damagetype, weapon);
+	SDKHooks_TakeDamage(attacker, inflictor, attacker, damage, damagetype, weapon, damageForce, damagePosition);
+	CloseHandle(dataPack);
+}
+// pan0s | end chainsaw fix part 2
 
 stock bool IsWeaponGrenadeLauncher(char[] sInflictorClass)
 {
