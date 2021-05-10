@@ -1,6 +1,7 @@
 10-May-2021 v2.6
-- Fix by pan0s for server crash when chainsaw reverse damage causing incap or death.
-- Fix regression caused by chainsaw fix when GetEdictClassname is used with weapon values < 1.
+- Fix by pan0s for server crash when chainsaw reverse damage causes incap or death.
+--- Fixed regression caused by chainsaw fix (GetEdictClassname used with weapon values < 1).
+--- Added a few optimizations to the chainsaw fix.
 - Fix friendly-fire triggered during hunter pounce/jockey ride if attacker shoots victim instead of hunter/jockey.
 - Fix reverse friendly-fire vocalizations and messages even though the damage is reversed...
 --- The victim will vocalize an accusation against the attacker.
