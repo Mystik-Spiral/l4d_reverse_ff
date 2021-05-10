@@ -26,7 +26,7 @@ Supports language translations using "l4d_reverse_ff.phrases.txt" file.
 - Option to specify extra damage if attacker used explosive/incendiary ammo. [reverseff_multiplier (default: 1.125 = 12.5%)]
 - Option to specify maximum survivor damage allowed per chapter before kick/ban (0=disable). [reverseff_survivormaxdmg (default: 200)]
 - Option to specify maximum infected damage allowed per chapter before kick/ban (0=disable). [reverseff_infectedmaxdmg (default: 50)]
-- Option to specify maximum tank damage allowed per chapter before kick/ban (0=disable).  [reverseff_tankdmg (default: 300)]
+- Option to specify maximum tank damage allowed per chapter before kick/ban (0=disable).  [reverseff_tankmaxdmg (default: 300)]
 - Option to specify kick/ban duration in minutes. (0=permanent ban, -1=kick instead of ban). [reverseff_banduration (default: 10)]
 - Option to treat ReverseFF as self-damage. (or reverse accusations). [reverseff_self (default: false)]
 - Option to enable/disable plugin by game mode. [reverseff_modes_on, reverseff_modes_off, reverseff_modes_tog]
