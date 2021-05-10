@@ -1,3 +1,14 @@
+10-May-2021 v2.6
+- Fix by pan0s for server crash when chainsaw reverse damage causing incap or death.
+- Fix regression caused by chainsaw fix when GetEdictClassname is used with weapon values < 1.
+- Fix friendly-fire triggered during hunter pounce/jockey ride if attacker shoots victim instead of hunter/jockey.
+- Fix reverse friendly-fire vocalizations and messages even though the damage is reversed...
+--- The victim will vocalize an accusation against the attacker.
+--- The attack message displayed will show correct victim and attacker.
+--- If the attacker is using explosive/incendiary ammo, the victim will not stumble/burn, but the attacker will.
+--- Due to this fix, the "reverseff_self" ConVar is no longer used and needs to be removed from the cfg file.
+--- Remove "reverseff_self" entry from l4d_reverse_ff.cfg or just delete the file and let the plugin recreate it.
+
 28-Mar-2021 v2.5
 - Add new ConVar option to ReverseFF during Smoker pull or Charger carry.
 - Fixed ReverseFF when victim freed from Smoker tongue after pull started but before being choked.
