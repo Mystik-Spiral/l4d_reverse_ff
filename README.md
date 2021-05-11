@@ -11,7 +11,7 @@ Although this plugin discourages griefers/team killers since they can only damag
 - The second objective is to encourage inexperienced players not to join Expert games.
 
 This plugin reverses damage from the grenade launcher, but does not otherwise reverse explosion damage.  
-It does not reverse molotov/gascan damage (I have a separate plugin to handle burn/explosion damage).  
+It does not reverse molotov/gascan damage (I have a separate plugin to handle burn/explosion damage, see Suggestion section below).  
 Reverses friendly-fire for survivors and team attacks for infected.  
 Supports language translations using "l4d_reverse_ff.phrases.txt" file.  
 
