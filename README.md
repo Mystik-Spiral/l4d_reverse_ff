@@ -11,7 +11,7 @@ Although this plugin discourages griefers/team killers since they can only damag
 - The second objective is to encourage inexperienced players not to join Expert games.
 
 This plugin reverses damage from the grenade launcher, but does not otherwise reverse explosion damage.  
-It does not reverse molotov/gascan damage (I plan to make a separate plugin to handle that).  
+It does not reverse molotov/gascan damage (I have a separate plugin to handle burn/explosion damage).  
 Reverses friendly-fire for survivors and team attacks for infected.  
 Supports language translations using "l4d_reverse_ff.phrases.txt" file.  
 
@@ -28,7 +28,6 @@ Supports language translations using "l4d_reverse_ff.phrases.txt" file.
 - Option to specify maximum infected damage allowed per chapter before kick/ban (0=disable). [reverseff_infectedmaxdmg (default: 50)]
 - Option to specify maximum tank damage allowed per chapter before kick/ban (0=disable).  [reverseff_tankmaxdmg (default: 300)]
 - Option to specify kick/ban duration in minutes. (0=permanent ban, -1=kick instead of ban). [reverseff_banduration (default: 10)]
-- Option to treat ReverseFF as self-damage. (or reverse accusations). [reverseff_self (default: false)]
 - Option to enable/disable plugin by game mode. [reverseff_modes_on, reverseff_modes_off, reverseff_modes_tog]
 
 Want to contribute code enhancements?  
