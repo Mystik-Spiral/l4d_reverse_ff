@@ -42,4 +42,10 @@
 		"en"	"Excessive team attacks"
 		"fr"	"Attaques d'équipe excessif"
 	}
+	"DmgReversed"
+	{
+		"#format"	"{1:N}"
+		"en"		"You attacked {olive}{1}{lightgreen}, friendly-fire damage reversed"
+		"fr"		"Vous avez attaqué {olive}{1}{lightgreen}, les dégâts de tir ami sens inverse"
+	}
 }
