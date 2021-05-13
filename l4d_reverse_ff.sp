@@ -66,7 +66,7 @@ Plugin discussion: https://forums.alliedmods.net/showthread.php?t=329035
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "2.6"
+#define PLUGIN_VERSION "2.7alpha"
 #define CVAR_FLAGS FCVAR_NOTIFY
 #define TRANSLATION_FILENAME "l4d_reverse_ff.phrases"
 
@@ -511,9 +511,9 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 					if (!g_bToggle[attacker])
 					{
 						//PrintToServer("%N %T %N", attacker, "Attacked", LANG_SERVER, victim);
-						CPrintToChat(attacker, "{orange}[ReverseFF]{lightgreen} %t {olive}%N{lightgreen}, %t.", "YouAttacked", victim, "SurvivorFF");
+						CPrintToChat(attacker, "{orange}[ReverseFF]{lightgreen} %T", "DmgReversed", attacker, victim);
 						g_bToggle[attacker] = true;
-						CreateTimer(0.15, FlipToggle, attacker);
+						CreateTimer(0.75, FlipToggle, attacker);
 					}
 				}
 			}
