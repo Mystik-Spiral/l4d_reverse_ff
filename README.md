@@ -29,6 +29,7 @@ False means friendy-fire is disabled for that option and the attacker does not t
 - Option to ReverseFF when damage from chainsaw.  [reverseff_chainsaw (default: 1/true)]  
 - Option to ReverseFF during Smoker pull or Charger carry. [reverseff_pullcarry (default: 0/false)]  
 - Option to specify extra damage if attacker used explosive/incendiary ammo. [reverseff_multiplier (default: 1.125 = 12.5%)]  
+- Option to specify percentage of damage reversed. [reverseff_dmgmodifier (default: 1.0 = damage amount unmodified)]
 - Option to specify maximum survivor damage allowed per chapter before kick/ban (0=disable). [reverseff_survivormaxdmg (default: 200)]  
 - Option to specify maximum infected damage allowed per chapter before kick/ban (0=disable). [reverseff_infectedmaxdmg (default: 50)]  
 - Option to specify maximum tank damage allowed per chapter before kick/ban (0=disable).  [reverseff_tankmaxdmg (default: 300)]  
@@ -41,10 +42,11 @@ Suggestion:
 To minimize griefer impact, use this plugin along with...
 
 ReverseBurn and ExplosionAnnouncer (l4d_ReverseBurn_and_ExplosionAnnouncer)  
-...and...  
-ReverseBurn and ThrowableAnnouncer (l4d_ReverseBurn_and_ThrowableAnnouncer)
-
-When these plugins are combined, griefers cannot inflict friendly-fire or explosion damage, and it minimizes burn damage for victims.  
+ReverseBurn and ThrowableAnnouncer (l4d_ReverseBurn_and_ThrowableAnnouncer)  
+Command Block (l4d_command_block)  
+Spray Block (l4d_spray_block)  
+  
+When these plugins are combined, griefers cannot inflict friendly-fire or explosion damage, burn damage for victims is minimal, a variety of exploits are blocked, and all player sprays are blocked.  
 Although griefers will take significant damage, other players may not notice any difference in game play (other than laughing at stupid griefer fails).
 
 
