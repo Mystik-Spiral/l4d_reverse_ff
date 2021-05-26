@@ -1,3 +1,6 @@
+26-May-2021 v2.7
+- Add damage modifier (reverseff_dmgmodifier) to decrease/increase reversed damage by a percentage.
+
 10-May-2021 v2.6
 - Fix by pan0s for server crash when chainsaw reverse damage causes incap or death.
 --- Fixed regression caused by chainsaw fix (GetEdictClassname used with weapon values < 1).
