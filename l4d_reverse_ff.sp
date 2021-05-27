@@ -30,6 +30,7 @@ False means friendy-fire is disabled for that option and the attacker does not t
 - Option to ReverseFF when damage from chainsaw.  [reverseff_chainsaw (default: 1/true)]  
 - Option to ReverseFF during Smoker pull or Charger carry. [reverseff_pullcarry (default: 0/false)]  
 - Option to specify extra damage if attacker used explosive/incendiary ammo. [reverseff_multiplier (default: 1.125 = 12.5%)]  
+- Option to specify percentage of damage reversed. [reverseff_dmgmodifier (default: 1.0 = damage amount unmodified)]  
 - Option to specify maximum survivor damage allowed per chapter before kick/ban (0=disable). [reverseff_survivormaxdmg (default: 200)]  
 - Option to specify maximum infected damage allowed per chapter before kick/ban (0=disable). [reverseff_infectedmaxdmg (default: 50)]  
 - Option to specify maximum tank damage allowed per chapter before kick/ban (0=disable).  [reverseff_tankmaxdmg (default: 300)]  
@@ -42,11 +43,12 @@ Suggestion:
 To minimize griefer impact, use this plugin along with...
 
 ReverseBurn and ExplosionAnnouncer (l4d_ReverseBurn_and_ExplosionAnnouncer)  
-...and...  
-ReverseBurn and ThrowableAnnouncer (l4d_ReverseBurn_and_ThrowableAnnouncer)
-
-When these plugins are combined, griefers cannot inflict friendly-fire or explosion damage, and it minimizes burn damage.  
-Although griefers will take significant damage, other players may not notice any difference in game play.
+ReverseBurn and ThrowableAnnouncer (l4d_ReverseBurn_and_ThrowableAnnouncer)  
+Command Block (l4d_command_block)  
+Spray Block (l4d_spray_block)  
+  
+When these plugins are combined, griefers cannot inflict friendly-fire or explosion damage, burn damage for victims is minimal, a variety of exploits are blocked, and all player sprays are blocked.  
+Although griefers will take significant damage, other players may not notice any difference in game play (other than laughing at stupid griefer fails).
 
 
 Credits:  
@@ -66,12 +68,13 @@ Plugin discussion: https://forums.alliedmods.net/showthread.php?t=329035
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "2.6"
+#define PLUGIN_VERSION "2.7"
 #define CVAR_FLAGS FCVAR_NOTIFY
 #define TRANSLATION_FILENAME "l4d_reverse_ff.phrases"
 
 ConVar cvar_reverseff_admin;
 ConVar cvar_reverseff_multiplier;
+ConVar cvar_reverseff_dmgmodifier;
 ConVar cvar_reverseff_bot;
 ConVar cvar_reverseff_survivormaxdmg;
 ConVar cvar_reverseff_infectedmaxdmg;
@@ -86,6 +89,7 @@ ConVar cvar_reverseff_pullcarry;
 ConVar g_hCvarAllow, g_hCvarMPGameMode, g_hCvarModesOn, g_hCvarModesOff, g_hCvarModesTog;
 
 float g_fCvarDamageMultiplier;
+float g_fCvarDamageModifier;
 float g_fAccumDamage[MAXPLAYERS + 1];
 float g_fAccumDamageAsTank[MAXPLAYERS + 1];
 float g_fAccumDamageAsInfected[MAXPLAYERS + 1];
@@ -163,6 +167,7 @@ public void OnPluginStart()
 	cvar_reverseff_incapped = CreateConVar("reverseff_incapped", "0", "0=Do not ReverseFF if victim is incapped, 1=ReverseFF if victim is incapped", CVAR_FLAGS);
 	cvar_reverseff_attackerincapped = CreateConVar("reverseff_attackerincapped", "0", "0=Do not ReverseFF if attacker is incapped, 1=ReverseFF if attacker is incapped", CVAR_FLAGS);
 	cvar_reverseff_multiplier = CreateConVar("reverseff_multiplier", "1.125", "Special ammo damage multiplier (default=12.5%)", CVAR_FLAGS);
+	cvar_reverseff_dmgmodifier = CreateConVar("reverseff_dmgmodifier", "1.0", "0.0=no dmg...effectively disables friendly-fire\n0.01=1% less dmg, 0.1=10% less dmg, 0.5=50% less dmg, 1.0=dmg amt unmodified\n1.01=1% more dmg, 1.1=10% more dmg, 1.5=50% more dmg, 2.0=dmg amt doubled", CVAR_FLAGS);
 	cvar_reverseff_survivormaxdmg = CreateConVar("reverseff_survivormaxdmg", "200", "Maximum damage allowed before kick/ban survivor (0=disable)", CVAR_FLAGS);
 	cvar_reverseff_infectedmaxdmg = CreateConVar("reverseff_infectedmaxdmg", "50", "Maximum damage allowed before kick/ban infected (0=disable)", CVAR_FLAGS);
 	cvar_reverseff_tankmaxdmg = CreateConVar("reverseff_tankmaxdmg", "300", "Maximum damage allowed before kick/ban tank (0=disable)", CVAR_FLAGS);
@@ -179,6 +184,7 @@ public void OnPluginStart()
 	
 	cvar_reverseff_admin.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_multiplier.AddChangeHook(action_ConVarChanged);
+	cvar_reverseff_dmgmodifier.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_bot.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_survivormaxdmg.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_infectedmaxdmg.AddChangeHook(action_ConVarChanged);
@@ -271,6 +277,7 @@ void GetCvars()
 {
 	g_bCvarReverseIfAdmin = cvar_reverseff_admin.BoolValue;
 	g_fCvarDamageMultiplier = cvar_reverseff_multiplier.FloatValue;
+	g_fCvarDamageModifier = cvar_reverseff_dmgmodifier.FloatValue;
 	g_bCvarReverseIfBot = cvar_reverseff_bot.BoolValue;
 	g_fSurvivorMaxDamage = cvar_reverseff_survivormaxdmg.FloatValue;
 	g_fInfectedMaxDamage = cvar_reverseff_infectedmaxdmg.FloatValue;
@@ -406,6 +413,11 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 	//attacker and victim survivor checks
 	if (IsValidClientAndInGameAndSurvivor(attacker) && IsValidClientAndInGameAndSurvivor(victim) && victim != attacker)
 	{
+		if (IsFakeClient(attacker))
+		{
+			//ignore friendly-fire from bots which is 0 damage anyway
+			return Plugin_Continue;
+		}
 		char sInflictorClass[64];
 		if (inflictor > MaxClients)
 		{
@@ -447,6 +459,10 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 					//damage * "reverseff_multiplier"
 					damage *= g_fCvarDamageMultiplier;
 				}
+				
+				//apply damage modifier
+				damage *= g_fCvarDamageModifier;
+				
 				//accumulate damage total for attacker
 				g_fAccumDamage[attacker] += damage;
 				//debug acculated damage
@@ -511,9 +527,9 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 					if (!g_bToggle[attacker])
 					{
 						//PrintToServer("%N %T %N", attacker, "Attacked", LANG_SERVER, victim);
-						CPrintToChat(attacker, "{orange}[ReverseFF]{lightgreen} %t {olive}%N{lightgreen}, %t.", "YouAttacked", victim, "SurvivorFF");
+						CPrintToChat(attacker, "{orange}[ReverseFF]{lightgreen} %T", "DmgReversed", attacker, victim);
 						g_bToggle[attacker] = true;
-						CreateTimer(0.15, FlipToggle, attacker);
+						CreateTimer(0.75, FlipToggle, attacker);
 					}
 				}
 			}
