@@ -1,17 +1,23 @@
 26-May-2021 v2.7
-- Add damage modifier (reverseff_dmgmodifier) to decrease/increase reversed damage by a percentage.
+- Add damage modifier (reverseff_dmgmodifier) ConVar to decrease/increase reversed damage by a percentage.
+-- 1=damage unmodified (default), <1 damage reduced, >1 damage increased, 0=no damage
+-- 0.01=1% less, 0.1=10% less, 0.5=50% less, 1.01=1% more, 1.1=10% more, 1.5=50% more
+- Fix regression when bot is attacker to remove hit/hurt sound/visual, even though no damage was actually done.
+- Fix when attacker continually causes friendly-fire using translated language and would occasionally display some of the messages in English (not translated).
+- In conjunction with the translation fix above, reduce the number of reverse friendly-fire messages.
+-- The translated message fixes require you download the new l4d_reverse_ff_phrases.txt file and copy it to the left4dead/addons/sourcemod/translations directory.
 
 10-May-2021 v2.6
 - Fix by pan0s for server crash when chainsaw reverse damage causes incap or death.
---- Fixed regression caused by chainsaw fix (GetEdictClassname used with weapon values < 1).
---- Added a few optimizations to the chainsaw fix.
+-- Fixed regression caused by chainsaw fix (GetEdictClassname used with weapon values < 1).
+-- Added a few optimizations to the chainsaw fix.
 - Fix friendly-fire triggered during hunter pounce/jockey ride if attacker shoots victim instead of hunter/jockey.
 - Fix reverse friendly-fire vocalizations and messages even though the damage is reversed...
---- The victim will vocalize an accusation against the attacker.
---- The attack message displayed will show correct victim and attacker.
---- If the attacker is using explosive/incendiary ammo, the victim will not stumble/burn, but the attacker will.
---- Due to this fix, the "reverseff_self" ConVar is no longer used and needs to be removed from the cfg file.
---- Remove "reverseff_self" entry from l4d_reverse_ff.cfg or just delete the file and let the plugin recreate it.
+-- The victim will vocalize an accusation against the attacker.
+-- The attack message displayed will show correct victim and attacker.
+-- If the attacker is using explosive/incendiary ammo, the victim will not stumble/burn, but the attacker will.
+-- Due to this fix, the "reverseff_self" ConVar is no longer used and needs to be removed from the cfg file.
+-- Remove "reverseff_self" entry from l4d_reverse_ff.cfg or just delete the file and let the plugin recreate it.
 - Allow kick/ban feature to be disabled by setting reverseff_*maxdmg to 0.
 
 28-Mar-2021 v2.5
