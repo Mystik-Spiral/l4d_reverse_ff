@@ -56,7 +56,7 @@ ReverseBurn and ThrowableAnnouncer (l4d_ReverseBurn_and_ThrowableAnnouncer)
 - Option to reverse blast damage, like pipe bombs.  
   
 When these three plugins are combined, griefers will usually get frustrated and leave since they cannot damage anyone other than themselves.  
-Although griefers will take significant damage, other players may not notice any difference in game play (other than laughing at stupid griefer fails).  
+Although griefers will take significant damage, other players may not notice any difference in game play (except laughing at stupid griefer fails).  
   
   
 Credits:  
