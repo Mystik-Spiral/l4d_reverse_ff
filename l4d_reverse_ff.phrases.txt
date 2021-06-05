@@ -4,48 +4,66 @@
 	{
 		"en" 	"{orange}NOTICE:{lightgreen} This server reverses friendly-fire damage!"
 		"fr"	"{orange}AVIS:{lightgreen} Ce serveur sens inverse les dégâts de tir ami!"
+		"es"	"{orange}AVISO:{lightgreen} ¡Este servidor revierte el daño de fuego amigo!"
+		"ru"	"{orange}ВНИМАНИЕ:{lightgreen} Этот сервер реверсировать дружественный огонь урон!"
 	}
 
 	"AnnounceAll"
 	{
 		"en" 	"{orange}NOTICE:{lightgreen} This server reverses friendly-fire and burn damage!"
 		"fr"	"{orange}AVIS:{lightgreen} Ce serveur sens inverse les dégâts de tir ami et de brûlure!"
+		"es"	"{orange}AVISO:{lightgreen} ¡Este servidor revierte el fuego amigo y el daño por quemaduras!"
+		"ru"	"{orange}ВНИМАНИЕ:{lightgreen} Этот сервер реверсировать дружественный огонь и урон от ожога!"
 	}
 
 	"YouAttacked"
 	{
 		"en"	"You attacked"
 		"fr"	"Vous avez attaqué"
+		"es"	"Tu atacaste"
+		"ru"	"Вы напали"
 	}
 	"SurvivorFF"
 	{
 		"en"	"friendly-fire damage reversed"
 		"fr"	"les dégâts de tir ami sens inverse"
+		"es"	"daño de fuego amigo revertido"
+		"ru"	"Урон от дружественного огня реверсировать"
 	}
 	"InfectedFF"
 	{
 		"en"	"team attack damage reversed"
 		"fr"	"les dégâts d'attaque d'équipe sens inverse"
+		"es"	"daño de ataque en equipo revertido"
+		"ru"	"командная атака повреждать реверсировать"
 	}
 	"Attacked"
 	{
 		"en"	"attacked"
 		"fr"	"a attaqué"
+		"es"	"atacó"
+		"ru"	"атаковали"
 	}
 	"ExcessiveFF"
 	{
 		"en"	"Excessive friendly-fire"
 		"fr"	"Tir ami excessif"
+		"es"	"Fuego amigo excesivo"
+		"ru"	"Чрезмерный дружеский огонь"
 	}
 	"ExcessiveTA"
 	{
 		"en"	"Excessive team attacks"
 		"fr"	"Attaques d'équipe excessif"
+		"es"	"Ataques de equipo excesivos"
+		"ru"	"Чрезмерные командные атаки"
 	}
 	"DmgReversed"
 	{
 		"#format"	"{1:N}"
 		"en"		"You attacked {olive}{1}{lightgreen}, friendly-fire damage reversed"
 		"fr"		"Vous avez attaqué {olive}{1}{lightgreen}, les dégâts de tir ami sens inverse"
+		"es"		"Atacaste a {olive}{1}{lightgreen}, daño de fuego amigo revertido"
+		"ru"		"Вы атаковали {olive}{1}{lightgreen}, урон дружественным огнем реверсировать"
 	}
 }
