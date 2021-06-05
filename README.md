@@ -62,6 +62,7 @@ Although griefers will take significant damage, other players may not notice any
 Credits:  
   
 Chainsaw damage fix by pan0s  
+Game modes on/off/tog by Silvers  
   
 Want to contribute code enhancements?  
 Create a pull request using this GitHub repository: https://github.com/Mystik-Spiral/l4d_reverse_ff  
