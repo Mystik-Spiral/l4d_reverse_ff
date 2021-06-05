@@ -15,7 +15,6 @@ Objectives:
   
 Description and options:  
   
-  
 Reverses friendly-fire weapon damage for survivors and claw attacks for infected.  
 Does not reverse burn/blast damage, except for grenade launcher (see Suggestion section below).  
 Supports client language translation, currently English, French, Spanish, and Russian.  
