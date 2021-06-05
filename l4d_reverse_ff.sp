@@ -1,26 +1,31 @@
 /*
-
-Reverse Friendly-Fire (l4d_reverse_ff) by Mystik Spiral
-
+  
+Reverse Friendly-Fire (l4d_reverse_ff) by Mystik Spiral  
+  
+Purpose:  
+  
 Left4Dead(2) SourceMod plugin that reverses friendly-fire.  
 The attacker takes all of the damage and the victim takes none.  
-This forces players to be more precise with their shots or they will spend a lot of time on the ground.
-
-Although this plugin discourages griefers/team killers since they can only damage themselves and no one else...
-
-- The first objective is to force players to improve their shooting tactics and aim.  
-- The second objective is to encourage inexperienced players not to join Expert games.
-
-This plugin reverses damage from the grenade launcher, but does not otherwise reverse explosion damage.  
-It does not reverse burn/explosion damage (I have a separate plugin for that, see Suggestion section below).  
-Reverses friendly-fire for survivors and team attacks for infected.  
-Supports language translations using "l4d_reverse_ff.phrases.txt" file.
-
+  
+  
+Objectives:  
+  
+- Do not allow griefers to cause friendly-fire damage to other players.  
+- Incentivize all players to improve their shooting tactics and aim.  
+  
+  
+Description and options:  
+  
+  
+Reverses friendly-fire weapon damage for survivors and claw attacks for infected.  
+Does not reverse burn/blast damage, except for grenade launcher (see Suggestion section below).  
+Supports client language translation, currently English and French.  
+  
 Please note the following for the true/false options below:  
 Regardless of the setting, the victim never takes damage from the attacker.  
-True means friendly-fire is reversed for that option and the attacker takes the damage they caused.  
-False means friendy-fire is disabled for that option and the attacker does not take any damage.
-
+True means friendly-fire is reversed for that option and the attacker takes all of the damage.  
+False means friendy-fire is disabled for that option and the attacker does not take any damage.  
+  
 - Option to ReverseFF when attacker is an admin. [reverseff_admin (default: 0/false)]  
 - Option to ReverseFF when victim is a bot. [reverseff_bot (default: 0/false)]  
 - Option to ReverseFF when victim is incapacitated. [reverseff_incapped (default: 0/false)]  
@@ -30,34 +35,40 @@ False means friendy-fire is disabled for that option and the attacker does not t
 - Option to ReverseFF when damage from chainsaw.  [reverseff_chainsaw (default: 1/true)]  
 - Option to ReverseFF during Smoker pull or Charger carry. [reverseff_pullcarry (default: 0/false)]  
 - Option to specify extra damage if attacker used explosive/incendiary ammo. [reverseff_multiplier (default: 1.125 = 12.5%)]  
-- Option to specify percentage of damage reversed. [reverseff_dmgmodifier (default: 1.0 = damage amount unmodified)]  
+- Option to specify percentage of damage reversed for survivor (0=min, 2=max). [reverseff_dmgmodifier (default: 1.0=damage unmodified)]  
+- Option to specify percentage of damage reversed for infected (0=min, 2=max). [reverseff_dmgmodinfected (default: 1.0=damage unmodified)]  
 - Option to specify maximum survivor damage allowed per chapter before kick/ban (0=disable). [reverseff_survivormaxdmg (default: 200)]  
 - Option to specify maximum infected damage allowed per chapter before kick/ban (0=disable). [reverseff_infectedmaxdmg (default: 50)]  
 - Option to specify maximum tank damage allowed per chapter before kick/ban (0=disable).  [reverseff_tankmaxdmg (default: 300)]  
 - Option to specify kick/ban duration in minutes. (0=permanent ban, -1=kick instead of ban). [reverseff_banduration (default: 10)]  
-- Option to enable/disable plugin by game mode. [reverseff_modes_on, reverseff_modes_off, reverseff_modes_tog]
-
-
-Suggestion:
-
-To minimize griefer impact, use this plugin along with...
-
-ReverseBurn and ExplosionAnnouncer (l4d_ReverseBurn_and_ExplosionAnnouncer)  
-ReverseBurn and ThrowableAnnouncer (l4d_ReverseBurn_and_ThrowableAnnouncer)  
-Command Block (l4d_command_block)  
-Spray Block (l4d_spray_block)  
+- Option to enable/disable plugin by game mode. [reverseff_modes_on, reverseff_modes_off, reverseff_modes_tog]  
   
-When these plugins are combined, griefers cannot inflict friendly-fire or explosion damage, burn damage for victims is minimal, a variety of exploits are blocked, and all player sprays are blocked.  
-Although griefers will take significant damage, other players may not notice any difference in game play (other than laughing at stupid griefer fails).
-
-
+  
+Suggestion:  
+  
+To minimize griefer impact, use the Reverse Friendly-Fire plugin along with...  
+  
+ReverseBurn and ExplosionAnnouncer (l4d_ReverseBurn_and_ExplosionAnnouncer)  
+- Smart reverse of burn damage from explodables, like gascans.  
+- Option to reverse blast damage, like propane tanks.  
+  
+ReverseBurn and ThrowableAnnouncer (l4d_ReverseBurn_and_ThrowableAnnouncer)  
+- Smart reverse of burn damage from throwables, specifically molotovs.  
+- Option to reverse blast damage, like pipe bombs.  
+  
+When these three plugins are combined, griefers will usually get frustrated and leave since they cannot damage anyone other than themselves.  
+Although griefers will take significant damage, other players may not notice any difference in game play (except laughing at stupid griefer fails).  
+  
+  
 Credits:  
-Chainsaw damage bug fixed by pan0s
-
+  
+Chainsaw damage fix by pan0s  
+Game modes on/off/tog by Silvers  
+  
 Want to contribute code enhancements?  
-Create a pull request using this GitHub repository: https://github.com/Mystik-Spiral/l4d_reverse_ff
-
-Plugin discussion: https://forums.alliedmods.net/showthread.php?t=329035
+Create a pull request using this GitHub repository: https://github.com/Mystik-Spiral/l4d_reverse_ff  
+  
+Plugin discussion: https://forums.alliedmods.net/showthread.php?t=329035  
 
 */
 
@@ -68,13 +79,14 @@ Plugin discussion: https://forums.alliedmods.net/showthread.php?t=329035
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "2.7"
+#define PLUGIN_VERSION "2.7.1"
 #define CVAR_FLAGS FCVAR_NOTIFY
 #define TRANSLATION_FILENAME "l4d_reverse_ff.phrases"
 
 ConVar cvar_reverseff_admin;
 ConVar cvar_reverseff_multiplier;
 ConVar cvar_reverseff_dmgmodifier;
+ConVar cvar_reverseff_dmgmodinfected;
 ConVar cvar_reverseff_bot;
 ConVar cvar_reverseff_survivormaxdmg;
 ConVar cvar_reverseff_infectedmaxdmg;
@@ -90,6 +102,7 @@ ConVar g_hCvarAllow, g_hCvarMPGameMode, g_hCvarModesOn, g_hCvarModesOff, g_hCvar
 
 float g_fCvarDamageMultiplier;
 float g_fCvarDamageModifier;
+float g_fCvarDamageModifierInfected;
 float g_fAccumDamage[MAXPLAYERS + 1];
 float g_fAccumDamageAsTank[MAXPLAYERS + 1];
 float g_fAccumDamageAsInfected[MAXPLAYERS + 1];
@@ -167,7 +180,8 @@ public void OnPluginStart()
 	cvar_reverseff_incapped = CreateConVar("reverseff_incapped", "0", "0=Do not ReverseFF if victim is incapped, 1=ReverseFF if victim is incapped", CVAR_FLAGS);
 	cvar_reverseff_attackerincapped = CreateConVar("reverseff_attackerincapped", "0", "0=Do not ReverseFF if attacker is incapped, 1=ReverseFF if attacker is incapped", CVAR_FLAGS);
 	cvar_reverseff_multiplier = CreateConVar("reverseff_multiplier", "1.125", "Special ammo damage multiplier (default=12.5%)", CVAR_FLAGS);
-	cvar_reverseff_dmgmodifier = CreateConVar("reverseff_dmgmodifier", "1.0", "0.0=no dmg...effectively disables friendly-fire\n0.01=1% less dmg, 0.1=10% less dmg, 0.5=50% less dmg, 1.0=dmg amt unmodified\n1.01=1% more dmg, 1.1=10% more dmg, 1.5=50% more dmg, 2.0=dmg amt doubled", CVAR_FLAGS);
+	cvar_reverseff_dmgmodifier = CreateConVar("reverseff_dmgmodifier", "1.0", "0.0=no dmg, 1.0=dmg unmodified, 2.0=double dmg\n0.01=1% real dmg, 0.1=10% real dmg, 0.5=50% real dmg\n1.01=1% more dmg, 1.1=10% more dmg, 1.5=50% more dmg", CVAR_FLAGS);
+	cvar_reverseff_dmgmodinfected = CreateConVar("reverseff_dmgmodinfected", "1.0", "0.0=no dmg, 1.0=dmg unmodified, 2.0=double dmg\n0.01=1% real dmg, 0.1=10% real dmg, 0.5=50% real dmg\n1.01=1% more dmg, 1.1=10% more dmg, 1.5=50% more dmg", CVAR_FLAGS);
 	cvar_reverseff_survivormaxdmg = CreateConVar("reverseff_survivormaxdmg", "200", "Maximum damage allowed before kick/ban survivor (0=disable)", CVAR_FLAGS);
 	cvar_reverseff_infectedmaxdmg = CreateConVar("reverseff_infectedmaxdmg", "50", "Maximum damage allowed before kick/ban infected (0=disable)", CVAR_FLAGS);
 	cvar_reverseff_tankmaxdmg = CreateConVar("reverseff_tankmaxdmg", "300", "Maximum damage allowed before kick/ban tank (0=disable)", CVAR_FLAGS);
@@ -185,6 +199,7 @@ public void OnPluginStart()
 	cvar_reverseff_admin.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_multiplier.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_dmgmodifier.AddChangeHook(action_ConVarChanged);
+	cvar_reverseff_dmgmodinfected.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_bot.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_survivormaxdmg.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_infectedmaxdmg.AddChangeHook(action_ConVarChanged);
@@ -278,6 +293,7 @@ void GetCvars()
 	g_bCvarReverseIfAdmin = cvar_reverseff_admin.BoolValue;
 	g_fCvarDamageMultiplier = cvar_reverseff_multiplier.FloatValue;
 	g_fCvarDamageModifier = cvar_reverseff_dmgmodifier.FloatValue;
+	g_fCvarDamageModifierInfected = cvar_reverseff_dmgmodinfected.FloatValue;
 	g_bCvarReverseIfBot = cvar_reverseff_bot.BoolValue;
 	g_fSurvivorMaxDamage = cvar_reverseff_survivormaxdmg.FloatValue;
 	g_fInfectedMaxDamage = cvar_reverseff_infectedmaxdmg.FloatValue;
@@ -456,13 +472,25 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 				//special ammo checks
 				if (IsSpecialAmmo(weapon, attacker, inflictor, damagetype, bWeaponGL))
 				{
-					//damage * "reverseff_multiplier"
+					//damage * reverseff_multiplier
 					damage *= g_fCvarDamageMultiplier;
 				}
-				
-				//apply damage modifier
+				//reverseff_dmgmodifier min=0 (no reverse damage) max=2 (double reverse damage)
+				if (g_fCvarDamageModifier < 0.0)
+				{
+					g_fCvarDamageModifier = 0.0;
+				}
+				if (g_fCvarDamageModifier > 2.0)
+				{
+					g_fCvarDamageModifier = 2.0;
+				}
+				//apply reverseff_dmgmodifer damage modifier
 				damage *= g_fCvarDamageModifier;
-				
+				//if we are modifying reverse damage ensure damage is at least 1
+				if (g_fCvarDamageModifier > 0.0 && g_fCvarDamageModifier != 1.0 && 0.0 < damage < 1.0)
+				{
+					damage = 1.0;
+				}
 				//accumulate damage total for attacker
 				g_fAccumDamage[attacker] += damage;
 				//debug acculated damage
@@ -545,6 +573,22 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 			//check reverse friendly-fire parameters for: attacker=admin, victim=bot
 			if (!(ReverseIfAttackerAdmin(attacker) || ReverseIfVictimBot(victim)))
 			{
+				//reverseff_dmgmodinfected min=0 (no reverse damage) max=2 (double reverse damage)
+				if (g_fCvarDamageModifierInfected < 0.0)
+				{
+					g_fCvarDamageModifierInfected = 0.0;
+				}
+				if (g_fCvarDamageModifierInfected > 2.0)
+				{
+					g_fCvarDamageModifierInfected = 2.0;
+				}
+				//apply reverseff_dmgmodinfected damage modifier
+				damage *= g_fCvarDamageModifierInfected;
+				//if we are modifying reverse damage ensure damage is at least 1
+				if (g_fCvarDamageModifierInfected > 0.0 && g_fCvarDamageModifierInfected != 1.0 && 0.0 < damage < 1.0)
+				{
+					damage = 1.0;
+				}
 				//accumulate damage total for infected/tank attacker
 				if (IsTank(attacker))
 				{
