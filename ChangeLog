@@ -1,5 +1,5 @@
 05-Jun-2021 v2.7.1
-- Add damage modifier for infected (reverseff_dmgmodinfected) ConVar to decrease/incrase reversed damage by a percentage.
+- Add damage modifier for infected (reverseff_dmgmodinfected) ConVar to decrease/increase reversed damage by a percentage.
 -- Allows damage modifier to be set separately for infected and survivors.
 - Ensure reverseff_dmgmod* ConVars have minimum value of 0 (no damage reverse) and maximum value of 2 (double damage reverse).
 - When reverseff_dmgmod* is not 0 (no damage reverse) or 1 (unmodified damage reverse), ensure minimum inflicted damage is 1.
