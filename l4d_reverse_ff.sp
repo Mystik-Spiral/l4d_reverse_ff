@@ -41,6 +41,7 @@ False means friendy-fire is disabled for that option and the attacker does not t
 - Option to specify maximum infected damage allowed per chapter before kick/ban (0=disable). [reverseff_infectedmaxdmg (default: 50)]  
 - Option to specify maximum tank damage allowed per chapter before kick/ban (0=disable).  [reverseff_tankmaxdmg (default: 300)]  
 - Option to specify kick/ban duration in minutes. (0=permanent ban, -1=kick instead of ban). [reverseff_banduration (default: 10)]  
+- Option to specify no ReverseFF based on distance between victim and attacker (0=disable). [reverseff_proximity (default: 32)]  
 - Option to enable/disable plugin by game mode. [reverseff_modes_on, reverseff_modes_off, reverseff_modes_tog]  
   
   
@@ -64,6 +65,7 @@ Credits:
   
 Chainsaw damage fix by pan0s  
 Game modes on/off/tog by Silvers  
+GetClientDist adapted from UndoFF by dcx2  
   
 Want to contribute code enhancements?  
 Create a pull request using this GitHub repository: https://github.com/Mystik-Spiral/l4d_reverse_ff  
@@ -79,7 +81,7 @@ Plugin discussion: https://forums.alliedmods.net/showthread.php?t=329035
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "2.7.1"
+#define PLUGIN_VERSION "2.8"
 #define CVAR_FLAGS FCVAR_NOTIFY
 #define TRANSLATION_FILENAME "l4d_reverse_ff.phrases"
 
@@ -92,6 +94,7 @@ ConVar cvar_reverseff_survivormaxdmg;
 ConVar cvar_reverseff_infectedmaxdmg;
 ConVar cvar_reverseff_tankmaxdmg;
 ConVar cvar_reverseff_banduration;
+ConVar cvar_reverseff_proximity;
 ConVar cvar_reverseff_incapped;
 ConVar cvar_reverseff_attackerincapped;
 ConVar cvar_reverseff_mountedgun;
@@ -106,6 +109,7 @@ float g_fCvarDamageModifierInfected;
 float g_fAccumDamage[MAXPLAYERS + 1];
 float g_fAccumDamageAsTank[MAXPLAYERS + 1];
 float g_fAccumDamageAsInfected[MAXPLAYERS + 1];
+float g_fProximity;
 float g_fSurvivorMaxDamage;
 float g_fInfectedMaxDamage;
 float g_fTankMaxDamage;
@@ -186,6 +190,7 @@ public void OnPluginStart()
 	cvar_reverseff_infectedmaxdmg = CreateConVar("reverseff_infectedmaxdmg", "50", "Maximum damage allowed before kick/ban infected (0=disable)", CVAR_FLAGS);
 	cvar_reverseff_tankmaxdmg = CreateConVar("reverseff_tankmaxdmg", "300", "Maximum damage allowed before kick/ban tank (0=disable)", CVAR_FLAGS);
 	cvar_reverseff_banduration = CreateConVar("reverseff_banduration", "10", "Ban duration in minutes (0=permanent ban, -1=kick instead of ban)", CVAR_FLAGS);
+	cvar_reverseff_proximity = CreateConVar("reverseff_proximity", "32", "Attacker/victim distance to prevent ReverseFF (0=disable)", CVAR_FLAGS);
 	cvar_reverseff_mountedgun = CreateConVar("reverseff_mountedgun", "1", "0=Do not ReverseFF from mountedgun, 1=ReverseFF from mountedgun", CVAR_FLAGS);
 	cvar_reverseff_melee = CreateConVar("reverseff_melee", "1", "0=Do not ReverseFF from melee, 1=ReverseFF from melee", CVAR_FLAGS);
 	cvar_reverseff_chainsaw = CreateConVar("reverseff_chainsaw", "1", "0=Do not ReverseFF from chainsaw, 1=ReverseFF from chainsaw", CVAR_FLAGS);
@@ -205,6 +210,7 @@ public void OnPluginStart()
 	cvar_reverseff_infectedmaxdmg.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_tankmaxdmg.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_banduration.AddChangeHook(action_ConVarChanged);
+	cvar_reverseff_proximity.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_incapped.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_attackerincapped.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_mountedgun.AddChangeHook(action_ConVarChanged);
@@ -299,6 +305,7 @@ void GetCvars()
 	g_fInfectedMaxDamage = cvar_reverseff_infectedmaxdmg.FloatValue;
 	g_fTankMaxDamage = cvar_reverseff_tankmaxdmg.FloatValue;
 	g_iBanDuration = cvar_reverseff_banduration.IntValue;
+	g_fProximity = cvar_reverseff_proximity.FloatValue;
 	g_bCvarReverseIfIncapped = cvar_reverseff_incapped.BoolValue;
 	g_bCvarReverseIfAttackerIncapped = cvar_reverseff_attackerincapped.BoolValue;
 	g_bCvarReverseIfMountedgun = cvar_reverseff_mountedgun.BoolValue;
@@ -431,10 +438,10 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 	{
 		if (IsFakeClient(attacker))
 		{
-			//ignore friendly-fire from bots which is 0 damage anyway
+			//treat friendly-fire from bot attacker normally, which is 0 damage anyway
 			return Plugin_Continue;
 		}
-		char sInflictorClass[64];
+		char sInflictorClass[32];
 		if (inflictor > MaxClients)
 		{
 			GetEdictClassname(inflictor, sInflictorClass, sizeof(sInflictorClass));
@@ -459,6 +466,13 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 		if (bWeaponChainsaw && !g_bCvarReverseIfChainsaw)
 		{
 			ReverseIfChainsaw = true;
+		}
+		//debug victim/attacker distance
+		//PrintToServer("Distance between victim and attacker: %f", GetClientDist(victim, attacker));
+		//if weapon not melee or chainsaw, do not reverseff when distance between victim and attacker is less than reverseff_proximity
+		if (!bWeaponMelee && !bWeaponChainsaw && GetClientDist(victim, attacker) < g_fProximity)
+		{
+			return Plugin_Handled;
 		}
 		//debug weapon
 		//PrintToServer("GL: %b, MG: %b, InfCls: %s, weapon: %i", bWeaponGL, bWeaponMG, sInflictorClass, weapon);
@@ -826,4 +840,36 @@ public void CPrintToChat(int client, char[] message, any ...)
     ReplaceString(buffer, sizeof(buffer), "{olive}", "\x05");
 
     PrintToChat(client, buffer);
+}
+
+//gets the distance between victim and attacker
+//regardless of any difference in height
+stock float GetClientDist(int victim, int attacker)
+{
+	float attackerPos[3], victimPos[3];
+	float mins[3], maxs[3], halfHeight;
+	GetClientMins(victim, mins);
+	GetClientMaxs(victim, maxs);
+	
+	halfHeight = maxs[2] - mins[2] + 10;
+	
+	GetClientAbsOrigin(victim, victimPos);
+	GetClientAbsOrigin(attacker, attackerPos);
+	
+	float posHeightDiff = attackerPos[2] - victimPos[2];
+	
+	if (posHeightDiff > halfHeight)
+	{
+		attackerPos[2] -= halfHeight;
+	}
+	else if (posHeightDiff < (-1.0 * halfHeight))
+	{
+		victimPos[2] -= halfHeight;
+	}
+	else
+	{
+		attackerPos[2] = victimPos[2];
+	}
+	
+	return GetVectorDistance(victimPos, attackerPos, false);
 }
