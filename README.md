@@ -39,6 +39,7 @@ False means friendy-fire is disabled for that option and the attacker does not t
 - Option to specify maximum infected damage allowed per chapter before kick/ban (0=disable). [reverseff_infectedmaxdmg (default: 50)]  
 - Option to specify maximum tank damage allowed per chapter before kick/ban (0=disable).  [reverseff_tankmaxdmg (default: 300)]  
 - Option to specify kick/ban duration in minutes. (0=permanent ban, -1=kick instead of ban). [reverseff_banduration (default: 10)]  
+- Option to specify no ReverseFF based on distance between victim and attacker (0=disable). [reverseff_proximity (default: 32)]  
 - Option to enable/disable plugin by game mode. [reverseff_modes_on, reverseff_modes_off, reverseff_modes_tog]  
   
   
@@ -62,6 +63,7 @@ Credits:
   
 Chainsaw damage fix by pan0s  
 Game modes on/off/tog by Silvers  
+GetClientDist adapted from UndoFF by dcx2  
   
 Want to contribute code enhancements?  
 Create a pull request using this GitHub repository: https://github.com/Mystik-Spiral/l4d_reverse_ff  
