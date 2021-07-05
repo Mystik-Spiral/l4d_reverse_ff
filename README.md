@@ -3,8 +3,7 @@
 
 Purpose:  
   
-Left4Dead(2) SourceMod plugin that reverses friendly-fire weapon damage.  
-Attacker takes damage, victim does not.  
+Left4Dead(2) SourceMod plugin that reverses friendly-fire...attacker takes damage, victim does not.  
   
   
 Objectives:  
