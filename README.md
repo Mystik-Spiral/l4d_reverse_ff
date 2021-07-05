@@ -3,8 +3,8 @@
 
 Purpose:  
   
-Left4Dead(2) SourceMod plugin that reverses friendly-fire.  
-The attacker takes all of the damage and the victim takes none.  
+Left4Dead(2) SourceMod plugin that reverses friendly-fire weapon damage.  
+Attacker takes damage, victim does not.  
   
   
 Objectives:  
@@ -15,14 +15,14 @@ Objectives:
   
 Description and options:  
   
-Reverses friendly-fire weapon damage for survivors and claw attacks for infected.  
+Reverses friendly-fire weapon damage on survivor team and claw attacks on infected team.  
 Does not reverse burn/blast damage, except for grenade launcher (see Suggestion section below).  
-Supports client language translation, currently English, French, Spanish, and Russian.  
+Supports client language translation, currently English, French, Spanish, Russian, and Traditional Chinese.  
   
 Please note the following for the true/false options below:  
 Regardless of the setting, the victim never takes damage from the attacker.  
-True means friendly-fire is reversed for that option and the attacker takes all of the damage.  
-False means friendy-fire is disabled for that option and the attacker does not take any damage.  
+True means friendly-fire is reversed for that option and the attacker takes damage.  
+False means friendly-fire is disabled for that option and the attacker does not take damage.  
   
 - Option to ReverseFF when attacker is an admin. [reverseff_admin (default: 0/false)]  
 - Option to ReverseFF when victim is a bot. [reverseff_bot (default: 0/false)]  
@@ -64,6 +64,8 @@ Credits:
 Chainsaw damage fix by pan0s  
 Game modes on/off/tog by Silvers  
 GetClientDist adapted from UndoFF by dcx2  
+Traditional Chinese translation by in2002  
+  
   
 Want to contribute code enhancements?  
 Create a pull request using this GitHub repository: https://github.com/Mystik-Spiral/l4d_reverse_ff  
