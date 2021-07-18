@@ -21,10 +21,10 @@ Reverses friendly-fire weapon damage for survivors and claw attacks for infected
 Does not reverse burn/blast damage, except for grenade launcher (see Suggestion section below).  
 Supports client language translation, currently English, French, Spanish, and Russian.  
   
-Please note the following for the true/false options below:  
-Regardless of the setting, the victim never takes damage from the attacker.  
-True means friendly-fire is reversed for that option and the attacker takes all of the damage.  
-False means friendy-fire is disabled for that option and the attacker does not take any damage.  
+Please note the following for the true(1) / false(0) options below:  
+· The victim never takes damage from the attacker.  
+· 1 = friendly-fire is reversed for that option and the attacker takes damage.  
+· 0 = friendly-fire is disabled for that option and the attacker does not take damage.  
   
 - Option to ReverseFF when attacker is an admin. [reverseff_admin (default: 0/false)]  
 - Option to ReverseFF when victim is a bot. [reverseff_bot (default: 0/false)]  
