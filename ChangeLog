@@ -1,6 +1,7 @@
 25-Jun-2021 v2.8
 - Add proximity feature.
 -- If distance between victim and attacker is less than the proximity setting, do not reverseff.
+-- Set reverseff_proximity to 0 to disable this feature.
 
 05-Jun-2021 v2.7.1
 - Add damage modifier for infected (reverseff_dmgmodinfected) ConVar to decrease/increase reversed damage by a percentage.
