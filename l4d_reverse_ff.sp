@@ -4,8 +4,7 @@ Reverse Friendly-Fire (l4d_reverse_ff) by Mystik Spiral
   
 Purpose:  
   
-Left4Dead(2) SourceMod plugin that reverses friendly-fire.  
-The attacker takes all of the damage and the victim takes none.  
+Left4Dead(2) SourceMod plugin that reverses friendly-fire...attacker takes damage, victim does not.  
   
   
 Objectives:  
@@ -17,9 +16,9 @@ Objectives:
 Description and options:  
   
   
-Reverses friendly-fire weapon damage for survivors and claw attacks for infected.  
+Reverses friendly-fire weapon damage on survivor team and claw attacks on infected team.  
 Does not reverse burn/blast damage, except for grenade launcher (see Suggestion section below).  
-Supports client language translation, currently English, French, Spanish, and Russian.  
+Supports client language translation, currently English, French, Spanish, Russian, and Traditional Chinese.  
   
 Please note the following for the true(1) / false(0) options below:  
 · The victim never takes damage from the attacker.  
@@ -66,6 +65,8 @@ Credits:
 Chainsaw damage fix by pan0s  
 Game modes on/off/tog by Silvers  
 GetClientDist adapted from UndoFF by dcx2  
+Traditional Chinese translation by in2002  
+  
   
 Want to contribute code enhancements?  
 Create a pull request using this GitHub repository: https://github.com/Mystik-Spiral/l4d_reverse_ff  
@@ -81,7 +82,7 @@ Plugin discussion: https://forums.alliedmods.net/showthread.php?t=329035
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "2.8"
+#define PLUGIN_VERSION "2.8.1"
 #define CVAR_FLAGS FCVAR_NOTIFY
 #define TRANSLATION_FILENAME "l4d_reverse_ff.phrases"
 
@@ -101,6 +102,7 @@ ConVar cvar_reverseff_mountedgun;
 ConVar cvar_reverseff_melee;
 ConVar cvar_reverseff_chainsaw;
 ConVar cvar_reverseff_pullcarry;
+ConVar cvar_reverseff_announce;
 ConVar g_hCvarAllow, g_hCvarMPGameMode, g_hCvarModesOn, g_hCvarModesOff, g_hCvarModesTog;
 
 float g_fCvarDamageMultiplier;
@@ -126,6 +128,7 @@ bool g_bCvarReverseIfPullCarry;
 bool g_bCvarReverseIfMountedgun;
 bool g_bCvarReverseIfMelee;
 bool g_bCvarReverseIfChainsaw;
+bool g_bCvarAnnounce;
 bool g_bGrace[MAXPLAYERS + 1];
 bool g_bToggle[MAXPLAYERS + 1];
 bool g_bCvarAllow, g_bMapStarted;
@@ -195,6 +198,7 @@ public void OnPluginStart()
 	cvar_reverseff_melee = CreateConVar("reverseff_melee", "1", "0=Do not ReverseFF from melee, 1=ReverseFF from melee", CVAR_FLAGS);
 	cvar_reverseff_chainsaw = CreateConVar("reverseff_chainsaw", "1", "0=Do not ReverseFF from chainsaw, 1=ReverseFF from chainsaw", CVAR_FLAGS);
 	cvar_reverseff_pullcarry = CreateConVar("reverseff_pullcarry", "0", "0=Do not ReverseFF during Smoker pull or Charger carry, 1=ReverseFF from pull/carry", CVAR_FLAGS);
+	cvar_reverseff_announce = CreateConVar("reverseff_announce", "1", "0=Do not announce plugin, 1=Announce plugin", CVAR_FLAGS);
 	g_hCvarAllow = CreateConVar("reverseff_enabled", "1", "0=Plugin off, 1=Plugin on.", CVAR_FLAGS );
 	g_hCvarModesOn = CreateConVar("reverseff_modes_on", "", "Game mode names on, comma separated, no spaces. (Empty=all).", CVAR_FLAGS );
 	g_hCvarModesOff = CreateConVar("reverseff_modes_off", "", "Game mode names off, comma separated, no spaces. (Empty=none).", CVAR_FLAGS );
@@ -217,6 +221,7 @@ public void OnPluginStart()
 	cvar_reverseff_melee.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_chainsaw.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_pullcarry.AddChangeHook(action_ConVarChanged);
+	cvar_reverseff_announce.AddChangeHook(action_ConVarChanged);
 	g_hCvarMPGameMode = FindConVar("mp_gamemode");
 	g_hCvarMPGameMode.AddChangeHook(ConVarChanged_Allow);
 	g_hCvarAllow.AddChangeHook(ConVarChanged_Allow);
@@ -312,6 +317,7 @@ void GetCvars()
 	g_bCvarReverseIfMelee = cvar_reverseff_melee.BoolValue;
 	g_bCvarReverseIfChainsaw = cvar_reverseff_chainsaw.BoolValue;
 	g_bCvarReverseIfPullCarry = cvar_reverseff_pullcarry.BoolValue;
+	g_bCvarAnnounce = cvar_reverseff_announce.BoolValue;
 }
 
 void IsAllowed()
@@ -412,7 +418,10 @@ public void OnClientPutInServer(int client)
 
 public void OnClientPostAdminCheck(int client)
 {
-	CreateTimer(16.0, AnnouncePlugin, client);
+	if (g_bCvarAnnounce)
+	{
+		CreateTimer(16.0, AnnouncePlugin, client);
+	}
 }
 
 public void OnClientDisconnect(int client)
