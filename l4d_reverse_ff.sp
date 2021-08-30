@@ -41,7 +41,9 @@ Please note the following for the true(1) / false(0) options below:
 - Option to specify maximum tank damage allowed per chapter before kick/ban (0=disable).  [reverseff_tankmaxdmg (default: 300)]  
 - Option to specify kick/ban duration in minutes. (0=permanent ban, -1=kick instead of ban). [reverseff_banduration (default: 10)]  
 - Option to specify no ReverseFF based on distance between victim and attacker (0=disable). [reverseff_proximity (default: 32)]  
+- Option to enable/disable plugin (0=Plugin off, 1=Plugin on) [reverseff_enable (default=1)]  
 - Option to enable/disable plugin by game mode. [reverseff_modes_on, reverseff_modes_off, reverseff_modes_tog]  
+- Option to enable/disable plugin announcement (0=Announcement off, 1=Announcement on) [reverseff_announcement (default=1)]  
   
   
 Suggestion:  
