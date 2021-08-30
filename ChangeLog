@@ -1,3 +1,6 @@
+29-Aug-2021 v2.8.1
+- Add option to set announcement on/off (reverseff_announce [default=1])
+
 25-Jun-2021 v2.8
 - Add proximity feature.
 -- If distance between victim and attacker is less than the proximity setting, do not reverseff.
