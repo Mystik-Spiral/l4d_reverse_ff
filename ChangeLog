@@ -1,3 +1,6 @@
+16-Sep-2021 v2.8.2
+- Add option to display/suppress ReverseFF chat messages (reverseff_chatmsg [default=1])
+
 29-Aug-2021 v2.8.1
 - Add option to set announcement on/off (reverseff_announce [default=1])
 
