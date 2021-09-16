@@ -44,6 +44,7 @@ Please note the following for the true(1) / false(0) options below:
 - Option to enable/disable plugin (0=Plugin off, 1=Plugin on) [reverseff_enable (default=1)]  
 - Option to enable/disable plugin by game mode. [reverseff_modes_on, reverseff_modes_off, reverseff_modes_tog]  
 - Option to enable/disable plugin announcement (0=Announcement off, 1=Announcement on) [reverseff_announcement (default=1)]  
+- Option to enable/disable ReverseFF chat message (0=chat message off, 1=chat message on) [reverseff_chatmsg (default=1)]  
   
   
 Suggestion:  
@@ -84,7 +85,7 @@ Plugin discussion: https://forums.alliedmods.net/showthread.php?t=329035
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PLUGIN_VERSION "2.8.1"
+#define PLUGIN_VERSION "2.8.2"
 #define CVAR_FLAGS FCVAR_NOTIFY
 #define TRANSLATION_FILENAME "l4d_reverse_ff.phrases"
 
@@ -105,6 +106,7 @@ ConVar cvar_reverseff_melee;
 ConVar cvar_reverseff_chainsaw;
 ConVar cvar_reverseff_pullcarry;
 ConVar cvar_reverseff_announce;
+ConVar cvar_reverseff_chatmsg;
 ConVar g_hCvarAllow, g_hCvarMPGameMode, g_hCvarModesOn, g_hCvarModesOff, g_hCvarModesTog;
 
 float g_fCvarDamageMultiplier;
@@ -131,6 +133,7 @@ bool g_bCvarReverseIfMountedgun;
 bool g_bCvarReverseIfMelee;
 bool g_bCvarReverseIfChainsaw;
 bool g_bCvarAnnounce;
+bool g_bCvarChatMsg;
 bool g_bGrace[MAXPLAYERS + 1];
 bool g_bToggle[MAXPLAYERS + 1];
 bool g_bCvarAllow, g_bMapStarted;
@@ -201,6 +204,7 @@ public void OnPluginStart()
 	cvar_reverseff_chainsaw = CreateConVar("reverseff_chainsaw", "1", "0=Do not ReverseFF from chainsaw, 1=ReverseFF from chainsaw", CVAR_FLAGS);
 	cvar_reverseff_pullcarry = CreateConVar("reverseff_pullcarry", "0", "0=Do not ReverseFF during Smoker pull or Charger carry, 1=ReverseFF from pull/carry", CVAR_FLAGS);
 	cvar_reverseff_announce = CreateConVar("reverseff_announce", "1", "0=Do not announce plugin, 1=Announce plugin", CVAR_FLAGS);
+	cvar_reverseff_chatmsg = CreateConVar("reverseff_chatmsg", "1", "0=Do not display ReverseFF chat messages, 1=Display ReverseFFchat messages", CVAR_FLAGS);
 	g_hCvarAllow = CreateConVar("reverseff_enabled", "1", "0=Plugin off, 1=Plugin on.", CVAR_FLAGS );
 	g_hCvarModesOn = CreateConVar("reverseff_modes_on", "", "Game mode names on, comma separated, no spaces. (Empty=all).", CVAR_FLAGS );
 	g_hCvarModesOff = CreateConVar("reverseff_modes_off", "", "Game mode names off, comma separated, no spaces. (Empty=none).", CVAR_FLAGS );
@@ -224,6 +228,7 @@ public void OnPluginStart()
 	cvar_reverseff_chainsaw.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_pullcarry.AddChangeHook(action_ConVarChanged);
 	cvar_reverseff_announce.AddChangeHook(action_ConVarChanged);
+	cvar_reverseff_chatmsg.AddChangeHook(action_ConVarChanged);
 	g_hCvarMPGameMode = FindConVar("mp_gamemode");
 	g_hCvarMPGameMode.AddChangeHook(ConVarChanged_Allow);
 	g_hCvarAllow.AddChangeHook(ConVarChanged_Allow);
@@ -320,6 +325,7 @@ void GetCvars()
 	g_bCvarReverseIfChainsaw = cvar_reverseff_chainsaw.BoolValue;
 	g_bCvarReverseIfPullCarry = cvar_reverseff_pullcarry.BoolValue;
 	g_bCvarAnnounce = cvar_reverseff_announce.BoolValue;
+	g_bCvarChatMsg = cvar_reverseff_chatmsg.BoolValue;
 }
 
 void IsAllowed()
@@ -575,7 +581,7 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 					SDKHooks_TakeDamage(attacker, inflictor, attacker, damage, damagetype, weapon, damageForce, damagePosition);
 				}
 
-				if (damage > 0 && !IsFakeClient(attacker))
+				if (damage > 0 && !IsFakeClient(attacker) && g_bCvarChatMsg)
 				{
 					if (!g_bToggle[attacker])
 					{
@@ -650,7 +656,10 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 				//inflict damage to attacker
 				SDKHooks_TakeDamage(attacker, inflictor, victim, damage, damagetype, weapon, damageForce, damagePosition);
 				//PrintToServer("%N %T %N", attacker, "Attacked", LANG_SERVER, victim);
-				CPrintToChat(attacker, "{orange}[ReverseFF]{lightgreen} %t {olive}%N{lightgreen}, %t.", "YouAttacked", victim, "InfectedFF");
+				if (g_bCvarChatMsg)
+				{
+					CPrintToChat(attacker, "{orange}[ReverseFF]{lightgreen} %t {olive}%N{lightgreen}, %t.", "YouAttacked", victim, "InfectedFF");
+				}
 			}
 			//no damage for victim
 			return Plugin_Handled;
