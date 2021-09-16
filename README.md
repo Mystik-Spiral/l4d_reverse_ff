@@ -42,6 +42,7 @@ Please note the following for the true(1) / false(0) options below:
 - Option to enable/disable plugin (0=Plugin off, 1=Plugin on) [reverseff_enable (default=1)]  
 - Option to enable/disable plugin by game mode. [reverseff_modes_on, reverseff_modes_off, reverseff_modes_tog]  
 - Option to enable/disable plugin announcement (0=Announcement off, 1=Announcement on) [reverseff_announcement (default=1)]  
+- Option to display/suppress ReverseFF chat messages (0=Suppress ReverseFF chat messages, 1=Display ReverseFF chat messages) [reverseff_chatmsg (default=1)]
   
   
 Suggestion:  
