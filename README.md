@@ -45,30 +45,6 @@ Please note the following for the true(1) / false(0) options below:
 - Option to display/suppress ReverseFF chat messages (0=Suppress chat messages, 1=Display chat messages) [reverseff_chatmsg (default=1)]
   
   
-Suggestion:  
-  
-To minimize griefer impact, use the Reverse Friendly-Fire plugin along with...  
-  
-ReverseBurn and ExplosionAnnouncer (l4d_ReverseBurn_and_ExplosionAnnouncer)  
-- Smart reverse of burn damage from explodables, like gascans.  
-- Option to reverse blast damage, like propane tanks.  
-  
-ReverseBurn and ThrowableAnnouncer (l4d_ReverseBurn_and_ThrowableAnnouncer)  
-- Smart reverse of burn damage from throwables, specifically molotovs.  
-- Option to reverse blast damage, like pipe bombs.  
-  
-When these three plugins are combined, griefers will usually get frustrated and leave since they cannot damage anyone other than themselves.  
-Although griefers will take significant damage, other players may not notice any difference in game play (except laughing at stupid griefer fails).  
-  
-  
-Credits:  
-  
-Chainsaw damage fix by pan0s  
-Game modes on/off/tog by Silvers  
-GetClientDist adapted from UndoFF by dcx2  
-Traditional Chinese translation by in2002  
-  
-  
 Want to contribute code enhancements?  
 Create a pull request using this GitHub repository: https://github.com/Mystik-Spiral/l4d_reverse_ff  
   
