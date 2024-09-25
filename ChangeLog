@@ -1,3 +1,22 @@
+24-Sep-2024 v2.8.6
+- Add missing victim/attacker validation in datapack passed to chainsaw timer
+- Remove spam when ChatMsg option is enabled.
+
+07-Oct-2023 v2.8.5
+- Modified the reverseff_proximity console variable to allow for negative values.
+
+When reverseff_proximity is set to a negative value, ignore friendly-fire when the distance between the victim and attacker is greater than abs(reverseff_proximity), and reverseff if the distance between victim and attacker is less than abs(reverseff_proximity).
+
+When reverseff_proximity is set to a positive value, ignore friendly-fire when the distance between the victim and attacker is less than reverseff_proximity and reverseff if the distance between victim and attacker is greater than reverseff_proximity.
+
+24-Sep-2023 v2.8.4
+- Option to enable/disable stumble effect from grenade launcher friendly-fire (0=disable). [reverseff_glstumble (default: 0)]
+
+07-Sep-2023 v2.8.3
+- Fixed warnings when compiling using SourceMod 11.
+- Add cooldown option to suppress ReverseFF for specified time (reverseff_cooldowntime [default: 0])
+-- 0=disable, xx=seconds to disable ReverseFF after initial ReverseFF
+
 16-Sep-2021 v2.8.2
 - Add option to display/suppress ReverseFF chat messages (reverseff_chatmsg [default=1])
 -- 0=Suppress chat messages, 1=Display chat messages
