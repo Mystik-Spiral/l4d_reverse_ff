@@ -1,3 +1,23 @@
+09-Oct-2024 v2.9
+
+By popular demand...
+Allow victim damage using a modifier with separate values for bot victim and human victim.
+
+Modifier range: 0.0 - 2.0:
+
+0.0 = disabled (no damage to victim)
+0.1 = 10% of real damage
+0.5 = 50% of real damage
+1.0 = 100% of real damage
+1.1 = 110% of real damage
+1.5 = 150% of real damage
+2.0 = 200% of real damage
+
+Survivor bot victim damage: reverseff_botdmgmodifier (default=0.0)
+Survivor human victim damage: reverseff_humandmgmodifier (default=0.0)
+
+Either manually add these two parameters or delete the l4d2_reverse_ff.cfg file and let the system recreate it.
+
 24-Sep-2024 v2.8.6
 - Add missing victim/attacker validation in datapack passed to chainsaw timer
 - Remove spam when ChatMsg option is enabled.
