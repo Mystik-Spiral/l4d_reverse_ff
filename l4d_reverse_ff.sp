@@ -16,7 +16,7 @@ AlliedModders: https://forums.alliedmods.net/showthread.php?t=329035
 #define PLUGIN_NAME               "[L4D & L4D2] Reverse Friendly-Fire"
 #define PLUGIN_AUTHOR             "Mystik Spiral"
 #define PLUGIN_DESCRIPTION        "Reverses friendly-fire... attacker takes damage, victim does not."
-#define PLUGIN_VERSION            "2.9"
+#define PLUGIN_VERSION            "2.9.1"
 #define PLUGIN_URL                "https://forums.alliedmods.net/showthread.php?t=329035"
 
 // ====================================================================================================
@@ -426,6 +426,11 @@ public void OnClientDisconnect(int client)
 
 public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3])
 {
+	//workaround for L4D1-specific SourceMod bug that always sets weapon to "-1"
+	if (!g_bL4D2 && inflictor <= MaxClients && HasEntProp(attacker, Prop_Send, "m_hActiveWeapon"))
+	{
+		weapon = GetEntPropEnt(attacker, Prop_Send, "m_hActiveWeapon");
+	}
 	//debug plugin enabled flag
 	//PrintToServer("g_bCvarAllow: %b", g_bCvarAllow);
 	if (!g_bCvarAllow)
