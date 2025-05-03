@@ -1,4 +1,4 @@
-03-May-2025
+03-May-2025 v2.9.1
 
 - Workaround for SourceMod bug(?) where weapon value was always set to "-1" in L4D1.
 - L4D2 servers do not need this version as it only fixes an SM bug when used with L4D1.
