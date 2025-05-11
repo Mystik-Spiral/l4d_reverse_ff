@@ -16,7 +16,7 @@ AlliedModders: https://forums.alliedmods.net/showthread.php?t=329035
 #define PLUGIN_NAME               "[L4D & L4D2] Reverse Friendly-Fire"
 #define PLUGIN_AUTHOR             "Mystik Spiral"
 #define PLUGIN_DESCRIPTION        "Reverses friendly-fire... attacker takes damage, victim does not."
-#define PLUGIN_VERSION            "2.9.1"
+#define PLUGIN_VERSION            "2.9.2"
 #define PLUGIN_URL                "https://forums.alliedmods.net/showthread.php?t=329035"
 
 // ====================================================================================================
@@ -426,19 +426,63 @@ public void OnClientDisconnect(int client)
 
 public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3])
 {
-	//workaround for L4D1-specific SourceMod bug that always sets weapon to "-1"
-	if (!g_bL4D2 && inflictor <= MaxClients && HasEntProp(attacker, Prop_Send, "m_hActiveWeapon"))
-	{
-		weapon = GetEntPropEnt(attacker, Prop_Send, "m_hActiveWeapon");
-	}
 	//debug plugin enabled flag
 	//PrintToServer("g_bCvarAllow: %b", g_bCvarAllow);
+	
 	if (!g_bCvarAllow)
 	{
 		return Plugin_Continue;
 	}
+
+	//workaround to get weapon index to behave the same in L4D1 as it does in L4D2
+	if(!g_bL4D2 && 0 < attacker <= MaxClients && IsClientInGame(attacker) && inflictor > 0 && IsValidEntity(inflictor))
+	{
+		if(attacker == inflictor && HasEntProp(attacker, Prop_Send, "m_hActiveWeapon"))
+		{
+			weapon = GetEntPropEnt(attacker, Prop_Send, "m_hActiveWeapon");
+		}
+	}
+	
 	//debug damage
 	//PrintToServer("Vic: %i, Atk: %i, Inf: %i, Dam: %f, DamTyp: %i, Wpn: %i", victim, attacker, inflictor, damage, damagetype, weapon);
+
+	//get classname of weapon
+    static char sInflictorClass[32];
+	if (inflictor > MaxClients && IsValidEntity(inflictor))
+	{
+		GetEntityClassname(inflictor, sInflictorClass, sizeof(sInflictorClass));
+	}
+	//set reverseff options for grenade launcher, mounted gun, melee, and chainsaw
+	//is weapon grenade launcher
+	bool bWeaponGL = IsWeaponGrenadeLauncher(sInflictorClass);
+	//is weapon mounted gun
+	bool bWeaponMG = IsWeaponMinigun(sInflictorClass);
+	//should reverse mounted gun
+	bool ReverseIfMountedgun = false;
+	if (bWeaponMG && !g_bCvarReverseIfMountedgun)
+	{
+		ReverseIfMountedgun = true;
+	}
+	//is weapon melee
+	bool bWeaponMelee = IsWeaponMelee(sInflictorClass);
+	//should reverse melee
+	bool ReverseIfMelee = false;
+	if (bWeaponMelee && !g_bCvarReverseIfMelee)
+	{
+		ReverseIfMelee = true;
+	}
+	//is weapon chainsaw
+	bool bWeaponChainsaw = IsWeaponChainsaw(sInflictorClass);
+	//should reverse chainsaw
+	bool ReverseIfChainsaw = false;
+	if (bWeaponChainsaw && !g_bCvarReverseIfChainsaw)
+	{
+		ReverseIfChainsaw = true;
+	}
+
+	//debug weapon
+	//PrintToServer("GL: %b, MG: %b, InfCls: %s, weapon: %i", bWeaponGL, bWeaponMG, sInflictorClass, weapon);
+	
 	//attacker and victim survivor checks
 	if (IsValidClientAndInGameAndSurvivor(attacker) && IsValidClientAndInGameAndSurvivor(victim) && victim != attacker)
 	{
@@ -447,6 +491,7 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 			//treat friendly-fire from bot attacker normally, which is 0 damage anyway
 			return Plugin_Continue;
 		}
+		//determine damage for bot victim
 		float fBotDamage = 0.0;
 		//check if attacker is a non-bot survivor and victim is a bot survivor that will be damaged
 		if (IsFakeClient(victim) && !IsFakeClient(attacker) && 0.0 < g_fCvarBotDmgModifier <= 2.0)
@@ -458,11 +503,13 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 			{
 				fBotDamage = 1.0;
 			}
+			//inflict bot victim damage
 			if (fBotDamage >= 1.0)
 			{
 				SDKHooks_TakeDamage(victim, inflictor, attacker, fBotDamage, damagetype, weapon, damageForce, damagePosition);
 			}
 		}
+		//determine damage for human victim
 		float fHumanDamage = 0.0;
 		//check if attacker is a non-bot survivor and victim is a non-bot survivor that will be damaged
 		if (!IsFakeClient(victim) && !IsFakeClient(attacker) && 0.0 < g_fCvarHumanDmgModifier <= 2.0)
@@ -474,43 +521,18 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 			{
 				fHumanDamage = 1.0;
 			}
+			//inflict human victim damage
 			if (fHumanDamage >= 1.0)
 			{
 				SDKHooks_TakeDamage(victim, inflictor, attacker, fHumanDamage, damagetype, weapon, damageForce, damagePosition);
 			}
 		}
-		char sInflictorClass[32];
-		if (inflictor > MaxClients)
-		{
-			GetEdictClassname(inflictor, sInflictorClass, sizeof(sInflictorClass));
-		}
-		//is weapon grenade launcher
-		bool bWeaponGL = IsWeaponGrenadeLauncher(sInflictorClass);
-		//is weapon minigun
-		bool bWeaponMG = IsWeaponMinigun(sInflictorClass);
-		bool ReverseIfMountedgun = false;
-		if (bWeaponMG && !g_bCvarReverseIfMountedgun)
-		{
-			ReverseIfMountedgun = true;
-		}
-		bool bWeaponMelee = IsWeaponMelee(sInflictorClass);
-		bool ReverseIfMelee = false;
-		if (bWeaponMelee && !g_bCvarReverseIfMelee)
-		{
-			ReverseIfMelee = true;
-		}
-		bool bWeaponChainsaw = IsWeaponChainsaw(sInflictorClass);
-		bool ReverseIfChainsaw = false;
-		if (bWeaponChainsaw && !g_bCvarReverseIfChainsaw)
-		{
-			ReverseIfChainsaw = true;
-		}
-		
 		//is cooldown feature enabled
 		if (g_fCooldownTime > 0.0)
 		{
 			//debug cooldown parameters
 			//PrintToServer("Time: %f, Last: %f, CDflag: %b, Atk: %i", GetGameTime(), g_fLastShotTime[attacker], g_bCooldownFlag[attacker], attacker);
+
 			//cooldown flag is off
 			if (!g_bCooldownFlag[attacker])
 			{
@@ -530,9 +552,10 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 				}
 			}
 		}
-		//
+
 		//debug victim/attacker distance
 		//PrintToServer("Distance between victim and attacker: %f", GetClientDist(victim, attacker));
+		
 		//if weapon not melee or chainsaw
 		if (!bWeaponMelee && !bWeaponChainsaw)
 		{
@@ -545,8 +568,6 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 				return Plugin_Handled;
 			}
 		}
-		//debug weapon
-		//PrintToServer("GL: %b, MG: %b, InfCls: %s, weapon: %i", bWeaponGL, bWeaponMG, sInflictorClass, weapon);
 		//if weapon caused damage
 		if (weapon > 0 || bWeaponGL || bWeaponMG)
 		{
@@ -602,7 +623,6 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 					//do not inflict damage since player was kicked/banned
 					return Plugin_Handled;
 				}
-
 				//pan0s | 20-Apr-2021 | Fixed: Server crashes if reversing chainsaw damage makes the attacker incapacitated or dead.
 				//pan0s | start chainsaw fix part 1
 				if (bWeaponChainsaw)
@@ -624,7 +644,6 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 					CreateTimer(0.01, ChainsawTakeDamageTimer, dataPack);
 				}
 				//pan0s | end chainsaw fix part 1
-				
 				else
 				{
 					//inflict (non-chainsaw) damage to attacker
